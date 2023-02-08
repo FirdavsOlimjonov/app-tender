@@ -8,4 +8,6 @@ import java.util.Optional;
 public interface TenderRepository extends JpaRepository<Tender,Integer> {
 
     Optional<Tender> findTopByOrderByCreatedAtDesc();
+
+    boolean existsById(Integer id);
 }

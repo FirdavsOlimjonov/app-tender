@@ -1,6 +1,8 @@
 package uz.mc.apptender.service;
 
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import uz.mc.apptender.modules.Tender;
 import uz.mc.apptender.payload.ApiResult;
@@ -16,6 +18,7 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class TenderServiceImpl implements TenderService {
     private final TenderRepository tenderRepository;
+    private static final Logger logger = LoggerFactory.getLogger(TenderServiceImpl.class);
 
     private Integer tenderId;
 
@@ -26,8 +29,16 @@ public class TenderServiceImpl implements TenderService {
         List<TenderInfoDTO> dtoList = new ArrayList<>();
 
         for (TenderInfoAddDTO tenderInfo : tenderInfoAddDTO) {
-            Tender tender = mapTenderAddDTOToTender(tenderInfo);
-            tenderRepository.save(tender);
+            Tender tender;
+            Optional<Tender> byId = tenderRepository.findById(tenderInfo.getId());
+            if (byId.isEmpty()) {
+                tender = mapTenderAddDTOToTender(tenderInfo);
+                tenderRepository.save(tender);
+            } else {
+                tender = byId.get();
+                logger.info("Already exists [id] = " + tenderInfo.getId());
+            }
+
             dtoList.add(mapTenderToTenderDTO(tender));
         }
 
