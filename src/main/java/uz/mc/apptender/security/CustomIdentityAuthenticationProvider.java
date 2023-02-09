@@ -32,10 +32,7 @@ public class CustomIdentityAuthenticationProvider implements AuthenticationProvi
     // In this function we need to connect with identity provider
     // and validate the user
     // we are hardcoding for a single user for demo purposes
-    UserDetails isValidUser(String username, String password) {
-        uz.mc.apptender.modules.User user = userRepository.findByUsernameEqualsIgnoreCase(username).orElseThrow(
-                () -> RestException.restThrow(MessageConstants.USER_NOT_FOUND, HttpStatus.FORBIDDEN));
-
+    UserDetails isValidUser(String username, String password, uz.mc.apptender.modules.User user) {
         if (passwordEncoder.matches(password, user.getPassword())) {
                 if (username.equalsIgnoreCase(adminUsername) && password.equalsIgnoreCase(adminPassword))
                     return User
@@ -48,8 +45,8 @@ public class CustomIdentityAuthenticationProvider implements AuthenticationProvi
                         .password(password)
                         .roles(RoleEnum.USER.name())
                         .build();
-            }
-        return null;
+        }
+        throw RestException.restThrow(MessageConstants.FULL_AUTHENTICATION_REQUIRED, HttpStatus.UNAUTHORIZED);
     }
 
     @Override
@@ -57,9 +54,9 @@ public class CustomIdentityAuthenticationProvider implements AuthenticationProvi
         String username = authentication.getName();
         String password = authentication.getCredentials().toString();
         uz.mc.apptender.modules.User user = userRepository.findByUsernameEqualsIgnoreCase(username).orElseThrow(
-                () -> RestException.restThrow(MessageConstants.USER_NOT_FOUND, HttpStatus.NOT_FOUND));
+                () -> RestException.restThrow(MessageConstants.USER_NOT_FOUND, HttpStatus.FORBIDDEN));
 
-        UserDetails userDetails = isValidUser(username, password);
+        UserDetails userDetails = isValidUser(username, password, user);
         if (userDetails != null) {
             return new UsernamePasswordAuthenticationToken(
                     user, user.getAuthorities(), null);
