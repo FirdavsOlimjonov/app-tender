@@ -31,10 +31,9 @@ public class TenderServiceImpl implements TenderService {
         for (TenderInfoAddDTO tenderInfo : tenderInfoAddDTO) {
             Tender tender;
             Optional<Tender> byId = tenderRepository.findById(tenderInfo.getId());
-            if (byId.isEmpty()) {
-                tender = mapTenderAddDTOToTender(tenderInfo);
-                tenderRepository.save(tender);
-            } else {
+            if (byId.isEmpty())
+                tender = tenderRepository.save(mapTenderAddDTOToTender(tenderInfo));
+            else {
                 tender = byId.get();
                 logger.info("Already exists [id] = " + tenderInfo.getId());
             }
@@ -47,7 +46,7 @@ public class TenderServiceImpl implements TenderService {
 
     private TenderInfoDTO mapTenderToTenderDTO(Tender tender) {
         return TenderInfoDTO.builder()
-                .tenderId(tenderId)
+                .tenderId(tender.getTenderId())
                 .catId(tender.getCatId())
                 .userId(tender.getUserId())
                 .edIsm(tender.getEdIsm())

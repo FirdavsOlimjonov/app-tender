@@ -47,8 +47,6 @@ public class SecurityConfig {
                                                 "//*.html",
                                                 "//*.css",
                                                 "//*.js",
-                                                "/swagger-ui.html",
-                                                "/swagger-resources/**",
                                                 "/v2/",
                                                 "/csrf",
                                                 "/webjars/**",

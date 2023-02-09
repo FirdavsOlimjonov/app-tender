@@ -45,13 +45,13 @@ public class Tender extends AbsTimestampEntity {
     @Column(nullable = false)
     private Double norma;
 
-    @Column(nullable = false)
+    @Column(nullable = false,precision=15, scale=7)
     private BigDecimal rashod;
 
-    @Column(nullable = false)
+    @Column(nullable = false,precision=15, scale=7)
     private BigDecimal price;
 
-    @Column(nullable = false)
+    @Column(nullable = false,precision=15, scale=7)
     private BigDecimal summa;
 
 }
