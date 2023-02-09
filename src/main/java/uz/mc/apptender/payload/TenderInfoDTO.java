@@ -15,20 +15,20 @@ import java.math.BigDecimal;
 @AllArgsConstructor
 @Builder
 public class TenderInfoDTO {
-    private Integer tenderId;
+    private Integer tender_id;
     private Integer id;
 
-    private Integer catId;
+    private Integer cat_id;
 
-    private Integer userId;
+    private Integer user_id;
 
     private Integer type;
 
-    private String kodSnk;
+    private String kod_snk;
 
     private String name;
 
-    private String edIsm;
+    private String ed_ism;
 
     private Double norma;
 

@@ -3,11 +3,14 @@ package uz.mc.apptender.payload;
 import lombok.Getter;
 
 import javax.validation.constraints.*;
+
+import lombok.Setter;
 import uz.mc.apptender.utils.MessageConstants;
 
 import java.math.BigDecimal;
 
 @Getter
+@Setter
 public class TenderInfoAddDTO {
     @NotNull(message = MessageConstants.MUST_NOT_BE_NULL_ID)
     private Integer id;
@@ -23,7 +26,7 @@ public class TenderInfoAddDTO {
 
 //    @NotNull(message = MessageConstants.MUST_NOT_BE_NULL_KOD_SNK)
 //    @NotBlank(message = MessageConstants.MUST_NOT_BE_BLANK_KOD_SNK)
-    private String kodSnk;
+    private String kod_snk;
 
     @NotBlank(message = MessageConstants.MUST_NOT_BE_BLANK_NAME)
     @NotNull(message = MessageConstants.MUST_NOT_BE_NULL_NAME)
@@ -31,7 +34,7 @@ public class TenderInfoAddDTO {
 
     @NotBlank(message = MessageConstants.MUST_NOT_BE_BLANK_EDISM)
     @NotNull(message = MessageConstants.MUST_NOT_BE_NULL_EDISM)
-    private String edIsm;
+    private String ed_ism;
 
     @NotNull(message = MessageConstants.MUST_NOT_BE_NULL_NORMA)
     private Double norma;
