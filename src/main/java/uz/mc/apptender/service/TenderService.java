@@ -1,13 +1,11 @@
 package uz.mc.apptender.service;
 
 import uz.mc.apptender.payload.ApiResult;
-import uz.mc.apptender.payload.TenderInfoAddDTO;
-import uz.mc.apptender.payload.TenderInfoDTO;
-
-import java.util.List;
+import uz.mc.apptender.payload.CoverAdd;
+import uz.mc.apptender.payload.CoverDTO;
 
 public interface TenderService {
 
-    ApiResult<List<TenderInfoDTO>> add(TenderInfoAddDTO[] tenderInfoAddDTO);
+    ApiResult<CoverDTO> add(CoverAdd coverAdd);
 
 }

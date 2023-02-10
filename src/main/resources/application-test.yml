@@ -1,5 +1,4 @@
 server:
-  ip-address: "192.168.222.171"
   port: 80
 spring:
   datasource:

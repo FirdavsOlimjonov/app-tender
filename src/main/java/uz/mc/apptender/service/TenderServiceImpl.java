@@ -5,9 +5,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import uz.mc.apptender.modules.Tender;
-import uz.mc.apptender.payload.ApiResult;
-import uz.mc.apptender.payload.TenderInfoAddDTO;
-import uz.mc.apptender.payload.TenderInfoDTO;
+import uz.mc.apptender.payload.*;
 import uz.mc.apptender.repositories.TenderRepository;
 
 import java.util.ArrayList;
@@ -23,12 +21,12 @@ public class TenderServiceImpl implements TenderService {
     private Integer tenderId;
 
     @Override
-    public ApiResult<List<TenderInfoDTO>> add(TenderInfoAddDTO[] tenderInfoAddDTO) {
+    public ApiResult<CoverDTO> add(CoverAdd coverAdd) {
         Optional<Tender> tenderOptional = tenderRepository.findTopByOrderByCreatedAtDesc();
         tenderId = tenderOptional.map(value -> value.getTenderId() + 1).orElse(1);
         List<TenderInfoDTO> dtoList = new ArrayList<>();
 
-        for (TenderInfoAddDTO tenderInfo : tenderInfoAddDTO) {
+        for (TenderInfoAddDTO tenderInfo : coverAdd.getMtbJson()) {
             Tender tender;
             Optional<Tender> byId = tenderRepository.findById(tenderInfo.getId());
             if (byId.isEmpty())
@@ -37,11 +35,10 @@ public class TenderServiceImpl implements TenderService {
                 tender = byId.get();
                 logger.info("Already exists [id] = " + tenderInfo.getId());
             }
-
             dtoList.add(mapTenderToTenderDTO(tender));
         }
 
-        return ApiResult.successResponse(dtoList);
+        return ApiResult.successResponse(CoverDTO.builder().mtbJson(dtoList).build());
     }
 
     private TenderInfoDTO mapTenderToTenderDTO(Tender tender) {
