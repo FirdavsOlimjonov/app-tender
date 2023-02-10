@@ -2,19 +2,14 @@ package uz.mc.apptender.security;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
-import uz.mc.apptender.exeptions.RestException;
-import uz.mc.apptender.modules.enums.RoleEnum;
 import uz.mc.apptender.repositories.UserRepository;
-import uz.mc.apptender.utils.MessageConstants;
 
 import java.util.Objects;
 import java.util.Optional;
