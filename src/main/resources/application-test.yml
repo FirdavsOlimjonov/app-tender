@@ -1,5 +1,5 @@
 server:
-  port: 2481
+  port: 443
 spring:
   datasource:
     url: jdbc:postgresql://localhost:5432/tender
