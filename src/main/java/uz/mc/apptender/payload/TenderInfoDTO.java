@@ -16,8 +16,6 @@ import java.math.BigDecimal;
 @AllArgsConstructor
 @Builder
 public class TenderInfoDTO {
-    @JsonProperty("TENDER_ID")
-    private Integer tender_id;
     @JsonProperty("CAT_ID")
     private Integer cat_id;
     @JsonProperty("USER_ID")

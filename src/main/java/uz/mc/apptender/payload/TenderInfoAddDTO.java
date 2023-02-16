@@ -28,9 +28,9 @@ public class TenderInfoAddDTO {
     @JsonProperty("TYPE")
     private Integer type;
 
-//    @NotNull(message = MessageConstants.MUST_NOT_BE_NULL_KOD_SNK)
+    //    @NotNull(message = MessageConstants.MUST_NOT_BE_NULL_KOD_SNK)
 //    @NotBlank(message = MessageConstants.MUST_NOT_BE_BLANK_KOD_SNK)
-@JsonProperty("KOD_SNK")
+    @JsonProperty("KOD_SNK")
     private String kod_snk;
 
     @NotBlank(message = MessageConstants.MUST_NOT_BE_BLANK_NAME)

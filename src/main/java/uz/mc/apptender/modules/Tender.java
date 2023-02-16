@@ -18,11 +18,11 @@ import java.util.Set;
 @Builder
 public class Tender extends AbsTimestampEntity {
     @Id
-    @Column(updatable = false,unique = true)
-    private Integer id;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Integer smId;
 
-    @Column(nullable = false,updatable = false)
-    private Integer tenderId;
+    @Column(nullable = false)
+    private Integer id;
 
     @Column(nullable = false)
     private Integer catId;
@@ -45,13 +45,16 @@ public class Tender extends AbsTimestampEntity {
     @Column(nullable = false)
     private Double norma;
 
-    @Column(nullable = false,precision=15, scale=7)
+    @Column(nullable = false,precision=20, scale=10)
     private BigDecimal rashod;
 
-    @Column(nullable = false,precision=15, scale=7)
+    @Column(nullable = false,precision=20, scale=10)
     private BigDecimal price;
 
-    @Column(nullable = false,precision=15, scale=7)
+    @Column(nullable = false,precision=20, scale=10)
     private BigDecimal summa;
+
+    @ManyToOne(optional = false)
+    private Smeta smeta;
 
 }

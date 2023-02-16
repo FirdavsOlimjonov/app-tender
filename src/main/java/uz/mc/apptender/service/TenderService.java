@@ -1,11 +1,11 @@
 package uz.mc.apptender.service;
 
 import uz.mc.apptender.payload.ApiResult;
-import uz.mc.apptender.payload.CoverAdd;
-import uz.mc.apptender.payload.CoverDTO;
+import uz.mc.apptender.payload.StroyAddDTO;
+import uz.mc.apptender.payload.StroyDTO;
 
 public interface TenderService {
 
-    ApiResult<CoverDTO> add(CoverAdd coverAdd);
+    ApiResult<StroyDTO> add(StroyAddDTO stroyAddDTO);
 
 }
