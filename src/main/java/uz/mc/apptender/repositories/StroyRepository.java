@@ -9,4 +9,8 @@ import java.util.Optional;
 
 public interface StroyRepository extends JpaRepository<Stroy,Integer> {
     Optional<Stroy> findTopByOrderByCreatedAtDesc();
+
+    Optional<Stroy> findByStrNameEqualsIgnoreCase(String strName);
+
+    boolean existsByStrNameEqualsIgnoreCase(String strName);
 }

@@ -18,7 +18,7 @@ import java.util.Set;
 @NoArgsConstructor
 @AllArgsConstructor
 public class Smeta extends AbsIntegerEntity {
-    @Column(nullable = false, unique = true)
+    @Column(nullable = false)
     private String smName;
     @Column(nullable = false)
     private String smNum;

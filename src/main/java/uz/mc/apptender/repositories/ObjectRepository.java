@@ -7,5 +7,5 @@ import uz.mc.apptender.modules.Tender;
 import java.util.Optional;
 
 public interface ObjectRepository extends JpaRepository<Object,Integer> {
-
+    Optional<Object> findByObNameEqualsIgnoreCase(String obName);
 }

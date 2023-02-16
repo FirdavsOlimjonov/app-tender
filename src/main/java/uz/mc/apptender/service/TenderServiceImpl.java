@@ -3,7 +3,9 @@ package uz.mc.apptender.service;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import uz.mc.apptender.exeptions.RestException;
 import uz.mc.apptender.modules.Object;
 import uz.mc.apptender.modules.Smeta;
 import uz.mc.apptender.modules.Stroy;
@@ -35,6 +37,9 @@ public class TenderServiceImpl implements TenderService {
         List<TenderInfoDTO> tenderInfoDTOList;
         List<SmetaDTO> smetaDTOList = new ArrayList<>();
         List<ObjectDTO> objectDTOList = new ArrayList<>();
+
+        if (stroyRepository.existsByStrNameEqualsIgnoreCase(stroyAddDTO.getStrName()))
+            throw RestException.restThrow("This str name already exist!", HttpStatus.CONFLICT);
 
         Stroy stroy = stroyRepository.save(new Stroy(stroyAddDTO.getStrName(), tenderId));
         for (ObjectAddDTO objectAddDTO : stroyAddDTO.getObArray()) {

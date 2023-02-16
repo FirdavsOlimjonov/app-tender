@@ -17,7 +17,7 @@ import java.util.Set;
 @NoArgsConstructor
 @AllArgsConstructor
 public class Object extends AbsIntegerEntity {
-    @Column(nullable = false, unique = true)
+    @Column(nullable = false)
     private String obName;
     @Column(nullable = false)
     private String obNum;
