@@ -18,6 +18,7 @@ import uz.mc.apptender.repositories.TenderRepository;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 @Service
@@ -38,9 +39,6 @@ public class TenderServiceImpl implements TenderService {
         List<SmetaDTO> smetaDTOList = new ArrayList<>();
         List<ObjectDTO> objectDTOList = new ArrayList<>();
 
-        if (stroyRepository.existsByStrNameEqualsIgnoreCase(stroyAddDTO.getStrName()))
-            throw RestException.restThrow("This str name already exist!", HttpStatus.CONFLICT);
-
         Stroy stroy = stroyRepository.save(new Stroy(stroyAddDTO.getStrName(), tenderId));
         for (ObjectAddDTO objectAddDTO : stroyAddDTO.getObArray()) {
             Object object = objectRepository.save(new Object(objectAddDTO.getObName(), objectAddDTO.getObNum(), stroy));
@@ -57,6 +55,8 @@ public class TenderServiceImpl implements TenderService {
     }
 
     private List<TenderInfoDTO> saveTender(Smeta smeta, List<TenderInfoAddDTO> smetaDtoList) {
+        if (Objects.isNull(smetaDtoList))
+            throw RestException.restThrow("Smeta array must not be empty", HttpStatus.BAD_REQUEST);
         return smetaDtoList.stream().map(smetaDto -> {
             Tender tender = tenderRepository.save(mapTenderAddDTOToTender(smetaDto, smeta));
             return mapTenderToTenderDTO(tender);}).toList();

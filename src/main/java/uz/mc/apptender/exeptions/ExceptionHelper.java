@@ -75,6 +75,14 @@ public class ExceptionHelper {
                 HttpStatus.BAD_REQUEST);
     }
 
+    @ExceptionHandler(value = {NullPointerException.class})
+    public ResponseEntity<?> handleException(NullPointerException ex) {
+        ex.printStackTrace();
+        return new ResponseEntity<>(
+                ApiResult.errorResponse(ex.getMessage(), 400),
+                HttpStatus.BAD_REQUEST);
+    }
+
     @ExceptionHandler(value = {MissingServletRequestParameterException.class})
     public ResponseEntity<?> handleException(MissingServletRequestParameterException ex) {
         ex.printStackTrace();

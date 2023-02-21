@@ -15,7 +15,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class Stroy extends AbsIntegerEntity {
-    @Column(nullable = false, unique = true)
+    @Column(nullable = false)
     private String strName;
     @Column(nullable = false,updatable = false)
     private Integer tenderId;
