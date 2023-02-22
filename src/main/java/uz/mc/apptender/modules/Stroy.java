@@ -17,7 +17,7 @@ import java.util.List;
 public class Stroy extends AbsIntegerEntity {
     @Column(nullable = false)
     private String strName;
-    @Column(nullable = false,updatable = false)
+    @Column(nullable = false)
     private Integer tenderId;
     @OneToMany(mappedBy = "stroy",fetch = FetchType.LAZY)
     private List<Object> obArray;

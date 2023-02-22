@@ -25,8 +25,8 @@ public class ObjectAddDTO {
     @JsonProperty("ob_num")
     private String obNum;
 
-    @NotNull(message = MessageConstants.MTB_JSON_NOT_BE_NULL)
-    @NotEmpty(message = MessageConstants.MTB_JSON_NOT_BE_EMPTY)
+    @NotNull(message = MessageConstants.SMETA_ARRAY_NOT_BE_NULL)
+    @NotEmpty(message = MessageConstants.SMETA_ARRAY_NOT_BE_EMPTY)
     @JsonProperty("sm_array")
     private List<SmetaAddDTO> smArray;
 }

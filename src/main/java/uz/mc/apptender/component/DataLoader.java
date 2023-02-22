@@ -46,6 +46,18 @@ public class DataLoader implements CommandLineRunner {
             role.setPermissions(Set.of(PermissionEnum.values()));
             roleRepository.save(role);
 
+            Role roleClient = new Role();
+            role.setName(RoleEnum.ZAKAZCHIK.name());
+            role.setDescription("Project owner");
+            role.setPermissions(Set.of(PermissionEnum.values()));
+            roleRepository.save(roleClient);
+
+            Role rolePudratchi = new Role();
+            role.setName(RoleEnum.PADRIYATCHIK.name());
+            role.setDescription("Project owner");
+            role.setPermissions(Set.of(PermissionEnum.values()));
+            roleRepository.save(rolePudratchi);
+
 
             Role roleUser = new Role();
             roleUser.setName(RoleEnum.USER.name());
