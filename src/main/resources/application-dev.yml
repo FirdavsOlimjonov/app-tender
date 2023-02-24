@@ -14,12 +14,6 @@ spring:
       hibernate:
         enable_lazy_load_no_trans: true
 
-  servlet:
-    multipart:
-      enabled: true
-      max-request-size: 10000MB
-      max-file-size: 10000MB
-
   mvc:
     pathmatch:
       matching-strategy: ant_path_matcher
@@ -29,11 +23,9 @@ logging:
     name: tenders.log
 
 app:
-  ip-address: "192.168.222.171"
   admin:
-    username: test
-    password: root123
+    username: tender
+    password: ygb237buw
 
-file:
 
 

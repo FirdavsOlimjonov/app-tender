@@ -9,10 +9,10 @@
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
     <groupId>uz.mc</groupId>
-    <artifactId>app-tender</artifactId>
+    <artifactId>app-lot</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name>app-tender</name>
-    <description>app-tender</description>
+    <name>app-lot</name>
+    <description>app-lot</description>
     <properties>
         <java.version>17</java.version>
     </properties>
@@ -54,6 +54,10 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-validation</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+        </dependency>
     </dependencies>
 
     <build>
@@ -72,7 +76,7 @@
                 </configuration>
             </plugin>
         </plugins>
-        <finalName>app-tender</finalName>
+        <finalName>app-lot</finalName>
     </build>
 
 </project>

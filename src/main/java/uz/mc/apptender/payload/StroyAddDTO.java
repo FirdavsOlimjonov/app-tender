@@ -15,6 +15,19 @@ public class StroyAddDTO {
     @NotBlank(message = MessageConstants.MUST_NOT_BE_BLANK_NAME)
     @JsonProperty("str_name")
     private String strName;
+
+    @NotNull(message = MessageConstants.MUST_NOT_BE_NULL_LOT_ID)
+    @JsonProperty("lot_id")
+    private Long lotId;
+
+    @NotBlank(message = MessageConstants.MUST_NOT_BE_BLANK_PHONE_NUMBER)
+    @NotNull(message = MessageConstants.MUST_NOT_BE_NULL_PHONE_NUMBER)
+    @JsonProperty("inn")
+    private String inn;
+
+    @JsonProperty("role_name")
+    private String role;
+
     @NotNull(message = MessageConstants.MTB_JSON_NOT_BE_NULL)
     @NotEmpty(message = MessageConstants.MTB_JSON_NOT_BE_EMPTY)
     @JsonProperty("ob_array")

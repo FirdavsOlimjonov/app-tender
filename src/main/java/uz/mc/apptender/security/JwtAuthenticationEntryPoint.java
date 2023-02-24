@@ -27,7 +27,7 @@ public class JwtAuthenticationEntryPoint extends BasicAuthenticationEntryPoint{
 
     @Override
     public void afterPropertiesSet() {
-        setRealmName("app-project");
+        setRealmName("app-tender");
         super.afterPropertiesSet();
     }
 

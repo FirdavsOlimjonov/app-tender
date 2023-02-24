@@ -34,7 +34,6 @@ public class SecurityConfig {
                         auth ->
                                 auth
                                         .antMatchers(RestConstants.OPEN_PAGES)
-//                                        .antMatchers("**")
                                         .permitAll()
                                         .antMatchers(HttpMethod.OPTIONS)
                                         .permitAll()

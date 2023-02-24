@@ -3,6 +3,7 @@ package uz.mc.apptender.controller;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.RestController;
 import uz.mc.apptender.payload.ApiResult;
+import uz.mc.apptender.payload.CreateTenderDTO;
 import uz.mc.apptender.payload.StroyAddDTO;
 import uz.mc.apptender.payload.StroyDTO;
 import uz.mc.apptender.service.TenderService;
@@ -15,5 +16,10 @@ public class TenderControllerImpl implements TenderController{
     @Override
     public ApiResult<StroyDTO> add(StroyAddDTO stroyAddDTO) {
         return tenderService.add(stroyAddDTO);
+    }
+
+    @Override
+    public ApiResult<?> createTender(CreateTenderDTO createTenderDTO) {
+        return tenderService.createTender(createTenderDTO);
     }
 }

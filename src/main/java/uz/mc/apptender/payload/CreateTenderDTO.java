@@ -14,11 +14,12 @@ import java.util.List;
 @Setter
 public class CreateTenderDTO {
     @NotNull(message = MessageConstants.MUST_NOT_BE_NULL_LOT_ID)
+    @NotBlank(message = MessageConstants.MUST_NOT_BE_BLANK_LOT_ID)
     @JsonProperty("lot_id")
-    private Long lotId;
+    private String lotId;
 
     @NotBlank(message = MessageConstants.MUST_NOT_BE_BLANK_PHONE_NUMBER)
     @NotNull(message = MessageConstants.MUST_NOT_BE_NULL_PHONE_NUMBER)
-    @JsonProperty("phone_number")
-    private String phoneNumber;
+    @JsonProperty("inn")
+    private String inn;
 }

@@ -1,14 +1,10 @@
 package uz.mc.apptender.modules;
 
 import lombok.*;
-import uz.mc.apptender.modules.enums.PermissionEnum;
-import uz.mc.apptender.modules.templates.AbsIntegerEntity;
 import uz.mc.apptender.modules.templates.AbsTimestampEntity;
 
 import javax.persistence.*;
 import java.math.BigDecimal;
-import java.util.List;
-import java.util.Set;
 
 @Entity
 @Setter
@@ -16,7 +12,7 @@ import java.util.Set;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Tender extends AbsTimestampEntity {
+public class Lot extends AbsTimestampEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer smId;
