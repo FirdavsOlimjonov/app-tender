@@ -54,7 +54,8 @@ public class TenderServiceImpl implements TenderService {
             objectDTOList.add(mapObjectToObjectDTO(object, smetaDTOList));
         }
 
-        return ApiResult.successResponse(new StroyDTO(stroy.getId(), stroy.getStrName(), stroy.getTenderId(), objectDTOList));
+        return ApiResult.successResponse(new StroyDTO(stroy.getId(), stroy.getStrName(), stroy.getTenderId(),
+                stroyAddDTO.getLotId(), stroyAddDTO.getInn(), stroyAddDTO.getRole(), objectDTOList));
     }
 
     @Override

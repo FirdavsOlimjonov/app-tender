@@ -22,6 +22,12 @@ public class StroyDTO {
     private String strName;
     @JsonProperty("tender_id")
     private Integer tenderId;
+    @JsonProperty("lot_id")
+    private String lotId;
+    @JsonProperty("inn")
+    private String inn;
+    @JsonProperty("role")
+    private String role;
     @JsonProperty("ob_array")
     private List<ObjectDTO> obArray;
 }

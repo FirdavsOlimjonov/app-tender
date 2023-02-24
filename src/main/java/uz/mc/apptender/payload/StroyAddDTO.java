@@ -18,7 +18,7 @@ public class StroyAddDTO {
 
     @NotNull(message = MessageConstants.MUST_NOT_BE_NULL_LOT_ID)
     @JsonProperty("lot_id")
-    private Long lotId;
+    private String lotId;
 
     @NotBlank(message = MessageConstants.MUST_NOT_BE_BLANK_PHONE_NUMBER)
     @NotNull(message = MessageConstants.MUST_NOT_BE_NULL_PHONE_NUMBER)
