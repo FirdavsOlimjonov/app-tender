@@ -36,8 +36,9 @@ public class TenderServiceImpl implements TenderService {
 
     @Override
     public ApiResult<StroyDTO> add(StroyAddDTO stroyAddDTO) {
-        Optional<Stroy> tenderOptional = stroyRepository.findTopByOrderByCreatedAtDesc();
-        tenderId = tenderOptional.map(value -> value.getTenderId() + 1).orElse(1);
+        Integer maxTenderId = stroyRepository.findMaxTenderId();
+        tenderId = Objects.isNull(maxTenderId)?1:maxTenderId+1;
+
         List<TenderInfoDTO> tenderInfoDTOList;
         List<SmetaDTO> smetaDTOList = new ArrayList<>();
         List<ObjectDTO> objectDTOList = new ArrayList<>();
