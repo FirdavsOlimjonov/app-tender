@@ -90,8 +90,6 @@ public class TenderServiceImpl implements TenderService {
 
     private TenderInfoDTO mapTenderToTenderDTO(Lot lot) {
         return TenderInfoDTO.builder()
-                .cat_id(lot.getCatId())
-                .user_id(lot.getUserId())
                 .ed_ism(lot.getEdIsm())
                 .id(lot.getId())
                 .kod_snk(lot.getKodSnk())
@@ -106,8 +104,6 @@ public class TenderServiceImpl implements TenderService {
 
     private Lot mapTenderAddDTOToTender(TenderInfoAddDTO tenderInfo, Smeta smeta) {
         return Lot.builder()
-                .catId(1)
-                .userId(1)
                 .id(tenderInfo.getId())
                 .edIsm(tenderInfo.getEd_ism())
                 .kodSnk(tenderInfo.getKod_snk())

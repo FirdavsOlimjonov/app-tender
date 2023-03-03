@@ -21,12 +21,6 @@ public class Lot extends AbsTimestampEntity {
     private Integer id;
 
     @Column(nullable = false)
-    private Integer catId;
-
-    @Column(nullable = false)
-    private Integer userId;
-
-    @Column(nullable = false)
     private Integer type;
 
 //    @Column(nullable = false)
