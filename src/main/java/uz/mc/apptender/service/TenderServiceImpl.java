@@ -1,10 +1,8 @@
 package uz.mc.apptender.service;
 
 import lombok.RequiredArgsConstructor;
-import org.apache.commons.lang3.RandomStringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
@@ -37,13 +35,13 @@ public class TenderServiceImpl implements TenderService {
     @Override
     public ApiResult<StroyDTO> add(StroyAddDTO stroyAddDTO) {
         Integer maxTenderId = stroyRepository.findMaxTenderId();
-        tenderId = Objects.isNull(maxTenderId)?1:maxTenderId+1;
+        tenderId = Objects.isNull(maxTenderId) ? 1 : maxTenderId+1;
 
         List<TenderInfoDTO> tenderInfoDTOList;
         List<SmetaDTO> smetaDTOList = new ArrayList<>();
         List<ObjectDTO> objectDTOList = new ArrayList<>();
 
-        Stroy stroy = stroyRepository.save(new Stroy(stroyAddDTO.getStrName(), tenderId));
+        Stroy stroy = stroyRepository.save(new Stroy(stroyAddDTO.getStrName(), tenderId, stroyAddDTO.getUserId()));
         for (ObjectAddDTO objectAddDTO : stroyAddDTO.getObArray()) {
             Object object = objectRepository.save(new Object(objectAddDTO.getObName(), objectAddDTO.getObNum(), stroy));
 
@@ -55,8 +53,9 @@ public class TenderServiceImpl implements TenderService {
             objectDTOList.add(mapObjectToObjectDTO(object, smetaDTOList));
         }
 
+        // todo roleni Muhammad akadan olish
         return ApiResult.successResponse(new StroyDTO(stroy.getId(), stroy.getStrName(), stroy.getTenderId(),
-                stroyAddDTO.getLotId(), stroyAddDTO.getInn(), stroyAddDTO.getRole(), objectDTOList));
+                stroyAddDTO.getLotId(), stroyAddDTO.getInn(),"Role", objectDTOList));
     }
 
     @Override

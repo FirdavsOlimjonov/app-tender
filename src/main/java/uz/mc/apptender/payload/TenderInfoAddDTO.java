@@ -23,7 +23,6 @@ public class TenderInfoAddDTO {
     @JsonProperty("ID")
     private Integer id;
 
-
     @NotNull(message = MessageConstants.MUST_NOT_BE_NULL_TYPE)
     @JsonProperty("TYPE")
     private Integer type;

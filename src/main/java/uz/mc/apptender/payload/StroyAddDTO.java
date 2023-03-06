@@ -2,6 +2,7 @@ package uz.mc.apptender.payload;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
+import uz.mc.apptender.modules.enums.RoleEnum;
 import uz.mc.apptender.utils.MessageConstants;
 
 import javax.validation.constraints.NotBlank;
@@ -25,8 +26,9 @@ public class StroyAddDTO {
     @JsonProperty("inn")
     private String inn;
 
-    @JsonProperty("role_name")
-    private String role;
+    @JsonProperty("user_id")
+    @NotNull(message = MessageConstants.MUST_NOT_BE_NULL_USER_ID)
+    private Integer userId;
 
     @NotNull(message = MessageConstants.MTB_JSON_NOT_BE_NULL)
     @NotEmpty(message = MessageConstants.MTB_JSON_NOT_BE_EMPTY)

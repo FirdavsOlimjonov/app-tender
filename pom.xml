@@ -76,7 +76,7 @@
                 </configuration>
             </plugin>
         </plugins>
-        <finalName>app-tender</finalName>
+        <finalName>app-lot</finalName>
     </build>
 
 </project>
