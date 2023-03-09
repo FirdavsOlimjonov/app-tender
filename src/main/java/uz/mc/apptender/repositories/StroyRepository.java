@@ -7,10 +7,7 @@ import uz.mc.apptender.modules.Stroy;
 import java.util.Optional;
 
 public interface StroyRepository extends JpaRepository<Stroy,Integer> {
-    @Query(value = "select max(order_index) from stroy", nativeQuery = true)
+    @Query(value = "select max(tender_id) from stroy", nativeQuery = true)
     Integer findMaxTenderId();
 
-    Optional<Stroy> findByStrNameEqualsIgnoreCase(String strName);
-
-    boolean existsByStrNameEqualsIgnoreCase(String strName);
 }
