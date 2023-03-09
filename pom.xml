@@ -9,10 +9,10 @@
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
     <groupId>uz.mc</groupId>
-    <artifactId>app-lot</artifactId>
+    <artifactId>app-tender</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name>app-lot</name>
-    <description>app-lot</description>
+    <name>app-tender</name>
+    <description>app-tender</description>
     <properties>
         <java.version>17</java.version>
     </properties>
@@ -76,7 +76,7 @@
                 </configuration>
             </plugin>
         </plugins>
-        <finalName>app-lot</finalName>
+        <finalName>app-tender</finalName>
     </build>
 
 </project>

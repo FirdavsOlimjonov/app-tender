@@ -22,14 +22,15 @@ public class Stroy extends AbsIntegerEntity {
     @Column(nullable = false)
     private Integer tenderId;
 
-    private Integer userid;
+    @Column(nullable = false)
+    private long userid;
 
     private RoleEnum role;
 
     @OneToMany(mappedBy = "stroy",fetch = FetchType.LAZY)
     private List<Object> obArray;
 
-    public Stroy(String strName, Integer tenderId, Integer userid) {
+    public Stroy(String strName, Integer tenderId, long userid) {
         this.strName = strName;
         this.tenderId = tenderId;
         this.userid = userid;

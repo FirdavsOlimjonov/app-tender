@@ -1,7 +1,9 @@
 package uz.mc.apptender.payload;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 import uz.mc.apptender.utils.MessageConstants;
 
@@ -12,6 +14,8 @@ import java.util.List;
 
 @Getter
 @Setter
+@AllArgsConstructor
+@NoArgsConstructor
 public class CreateTenderDTO {
     @NotNull(message = MessageConstants.MUST_NOT_BE_NULL_LOT_ID)
     @NotBlank(message = MessageConstants.MUST_NOT_BE_BLANK_LOT_ID)

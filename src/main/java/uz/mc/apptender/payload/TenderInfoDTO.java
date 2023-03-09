@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
+import uz.mc.apptender.modules.enums.RoleEnum;
 import uz.mc.apptender.utils.MessageConstants;
 
 import javax.validation.constraints.NotBlank;
@@ -20,6 +21,10 @@ public class TenderInfoDTO {
     private Integer id;
     @JsonProperty("TYPE")
     private Integer type;
+    @JsonProperty("USER_ID")
+    private long userId;
+    @JsonProperty("ROLE")
+    private RoleEnum role;
     @JsonProperty("KOD_SNK")
     private String kod_snk;
     @JsonProperty("NAME")

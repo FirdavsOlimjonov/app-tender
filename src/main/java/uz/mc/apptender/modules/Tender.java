@@ -1,6 +1,7 @@
 package uz.mc.apptender.modules;
 
 import lombok.*;
+import uz.mc.apptender.modules.enums.RoleEnum;
 import uz.mc.apptender.modules.templates.AbsTimestampEntity;
 
 import javax.persistence.*;
@@ -12,7 +13,7 @@ import java.math.BigDecimal;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Lot extends AbsTimestampEntity {
+public class Tender extends AbsTimestampEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer smId;
@@ -22,6 +23,12 @@ public class Lot extends AbsTimestampEntity {
 
     @Column(nullable = false)
     private Integer type;
+
+    @Column(nullable = false)
+    private long userId;
+
+    @Column(nullable = false)
+    private RoleEnum role;
 
 //    @Column(nullable = false)
     private String kodSnk;
