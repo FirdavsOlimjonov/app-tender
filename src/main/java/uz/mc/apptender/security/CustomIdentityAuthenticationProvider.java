@@ -16,11 +16,12 @@ import java.util.Objects;
 public class CustomIdentityAuthenticationProvider implements AuthenticationProvider {
 
     private final PasswordEncoder passwordEncoder;
-    @Value("${app.admin.username}")
-    private String adminUsername;
 
-    @Value("${app.admin.password}")
-    private String adminPassword;
+    @Value("${app.basic-auth.username}")
+    private String basicAuthUsername;
+
+    @Value("${app.basic-auth.password}")
+    private String basicAuthPassword;
 
 
     @Override
@@ -28,10 +29,10 @@ public class CustomIdentityAuthenticationProvider implements AuthenticationProvi
         String username = authentication.getName();
         String password = authentication.getCredentials().toString();
 
-        if (Objects.isNull(username) || !Objects.equals(username,adminUsername))
+        if (Objects.isNull(username) || !Objects.equals(username,basicAuthUsername))
             throw new BadCredentialsException("Full authentication required!");
 
-        if (Objects.isNull(password) || !Objects.equals(password,adminPassword))
+        if (Objects.isNull(password) || !Objects.equals(password,basicAuthPassword))
             throw new BadCredentialsException("Full authentication required!");
 
         return new UsernamePasswordAuthenticationToken(null, null, null);

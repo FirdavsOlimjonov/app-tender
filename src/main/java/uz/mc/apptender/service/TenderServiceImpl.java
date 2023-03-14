@@ -3,6 +3,7 @@ package uz.mc.apptender.service;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
@@ -26,10 +27,15 @@ public class TenderServiceImpl implements TenderService {
     private final ObjectRepository objectRepository;
     private final SmetaRepository smetaRepository;
     private final RestTemplate restTemplate = new RestTemplate();
-    private static final String username = "admin@mail.com";
-    private static final String password = "password";
-    private static final String apiUrl = "https://apistender-test1.mc.uz/api/send-sms-to-lot-user";
-    private static final String apiUrlToRole = "https://apistender-test1.mc.uz/api/get-role-of-lot-user";
+
+    @Value("${app.rest-template.username}")
+    private String username;
+    @Value("${app.rest-template.password}")
+    private String password ;
+    @Value("${app.rest-template.url-send-sms}")
+    private String apiUrl;
+    @Value("${app.rest-template.url-get-role}")
+    private String apiUrlToRole;
     private static final Logger logger = LoggerFactory.getLogger(TenderServiceImpl.class);
     private Integer tenderId;
 
@@ -57,9 +63,8 @@ public class TenderServiceImpl implements TenderService {
             objectDTOList.add(mapObjectToObjectDTO(object, smetaDTOList));
         }
 
-        // todo roleni Muhammad akadan olish
         return ApiResult.successResponse(new StroyDTO(stroy.getId(), stroy.getStrName(), stroy.getTenderId(),
-                stroyAddDTO.getLotId(), stroyAddDTO.getInn(), "Role", objectDTOList));
+                stroyAddDTO.getLotId(), stroyAddDTO.getInn(), authLotDTO.getRole().name(), objectDTOList));
     }
 
 
