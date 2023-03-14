@@ -25,6 +25,8 @@ public class StroyAddDTO {
     @JsonProperty("inn")
     private Long inn;
 
+    private String role;
+
     @NotNull(message = MessageConstants.MTB_JSON_NOT_BE_NULL)
     @NotEmpty(message = MessageConstants.MTB_JSON_NOT_BE_EMPTY)
     @JsonProperty("ob_array")
