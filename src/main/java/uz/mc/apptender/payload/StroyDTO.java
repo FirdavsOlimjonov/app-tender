@@ -23,9 +23,9 @@ public class StroyDTO {
     @JsonProperty("tender_id")
     private Integer tenderId;
     @JsonProperty("lot_id")
-    private String lotId;
+    private Long lotId;
     @JsonProperty("inn")
-    private String inn;
+    private Long inn;
     @JsonProperty("role")
     private String role;
     @JsonProperty("ob_array")

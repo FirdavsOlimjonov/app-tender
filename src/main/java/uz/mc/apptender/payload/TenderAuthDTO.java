@@ -10,8 +10,8 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class TenderAuthDTO {
-    private String lotId;
-    private String inn;
+    private Long lotId;
+    private Long inn;
     private String role;
     private String smsCode;
 }

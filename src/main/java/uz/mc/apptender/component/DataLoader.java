@@ -12,11 +12,11 @@ public class DataLoader implements CommandLineRunner {
     @Value("${spring.jpa.hibernate.ddl-auto}")
     private String ddlMode;
 
-    @Value("${app.admin.username}")
-    private String adminUsername;
-
-    @Value("${app.admin.password}")
-    private String adminPassword;
+//    @Value("${app.admin.username}")
+//    private String adminUsername;
+//
+//    @Value("${app.admin.password}")
+//    private String adminPassword;
 
     @Override
     public void run(String... args) {

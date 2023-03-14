@@ -18,12 +18,10 @@ import java.util.List;
 @NoArgsConstructor
 public class CreateTenderDTO {
     @NotNull(message = MessageConstants.MUST_NOT_BE_NULL_LOT_ID)
-    @NotBlank(message = MessageConstants.MUST_NOT_BE_BLANK_LOT_ID)
     @JsonProperty("lot_id")
-    private String lotId;
+    private Long lotId;
 
-    @NotBlank(message = MessageConstants.MUST_NOT_BE_BLANK_PHONE_NUMBER)
     @NotNull(message = MessageConstants.MUST_NOT_BE_NULL_PHONE_NUMBER)
     @JsonProperty("inn")
-    private String inn;
+    private Long inn;
 }
