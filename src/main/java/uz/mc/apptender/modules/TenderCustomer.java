@@ -13,7 +13,7 @@ import java.math.BigDecimal;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Tender extends AbsTimestampEntity {
+public class TenderCustomer extends AbsTimestampEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer smId;

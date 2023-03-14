@@ -22,7 +22,7 @@ public class Smeta extends AbsIntegerEntity {
     @ManyToOne(optional = false)
     private Object object;
     @OneToMany(mappedBy = "smeta",fetch = FetchType.LAZY)
-    private List<Tender> smeta;
+    private List<TenderCustomer> smeta;
 
     public Smeta(String smName, String smNum, Object object) {
         this.smName = smName;

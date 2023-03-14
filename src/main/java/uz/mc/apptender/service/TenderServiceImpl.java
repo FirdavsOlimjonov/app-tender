@@ -105,8 +105,8 @@ public class TenderServiceImpl implements TenderService {
 
         if (authLotDTO.getRole().toUpperCase().equals(RoleEnum.CUSTOMER.name()))
             return smetaDtoList.stream().map(smetaDto -> {
-                Tender tender = tenderRepository.save(mapTenderAddDTOToTender(smetaDto, smeta, authLotDTO));
-                return mapTenderToTenderDTO(tender);
+                TenderCustomer tenderCustomer = tenderRepository.save(mapTenderAddDTOToTender(smetaDto, smeta, authLotDTO));
+                return mapTenderToTenderDTO(tenderCustomer);
             }).toList();
 
         return smetaDtoList.stream().map(smetaDto -> {
@@ -147,19 +147,19 @@ public class TenderServiceImpl implements TenderService {
         return authLotDTO;
     }
 
-    private TenderInfoDTO mapTenderToTenderDTO(Tender tender) {
+    private TenderInfoDTO mapTenderToTenderDTO(TenderCustomer tenderCustomer) {
         return TenderInfoDTO.builder()
-                .ed_ism(tender.getEdIsm())
-                .id(tender.getId())
-                .kod_snk(tender.getKodSnk())
-                .type(tender.getType())
-                .price(tender.getPrice())
-                .name(tender.getName())
-                .norma(tender.getNorma())
-                .rashod(tender.getRashod())
-                .summa(tender.getSumma())
-                .userId(tender.getUserId())
-                .role(tender.getRole())
+                .ed_ism(tenderCustomer.getEdIsm())
+                .id(tenderCustomer.getId())
+                .kod_snk(tenderCustomer.getKodSnk())
+                .type(tenderCustomer.getType())
+                .price(tenderCustomer.getPrice())
+                .name(tenderCustomer.getName())
+                .norma(tenderCustomer.getNorma())
+                .rashod(tenderCustomer.getRashod())
+                .summa(tenderCustomer.getSumma())
+                .userId(tenderCustomer.getUserId())
+                .role(tenderCustomer.getRole())
                 .build();
     }
 
@@ -179,8 +179,8 @@ public class TenderServiceImpl implements TenderService {
                 .build();
     }
 
-    private Tender mapTenderAddDTOToTender(TenderInfoAddDTO tenderInfo, Smeta smeta, AuthLotDTO authLotDTO) {
-        return Tender.builder()
+    private TenderCustomer mapTenderAddDTOToTender(TenderInfoAddDTO tenderInfo, Smeta smeta, AuthLotDTO authLotDTO) {
+        return TenderCustomer.builder()
                 .id(tenderInfo.getId())
                 .edIsm(tenderInfo.getEd_ism())
                 .kodSnk(tenderInfo.getKod_snk())
