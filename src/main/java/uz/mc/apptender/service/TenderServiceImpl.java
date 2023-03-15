@@ -58,18 +58,19 @@ public class TenderServiceImpl implements TenderService {
 
         RoleEnum role = authLotDTO.getRole().toUpperCase().equals(RoleEnum.CUSTOMER.name()) ? RoleEnum.CUSTOMER : RoleEnum.OFFEROR;
 
-        //AGAR CUTOMER BOLSA USTIGA QAYTA YOZADI AGAR OLDINDAN YARATILGAN BOLSA
-        Stroy stroy = stroyRepository.findFirstByLotIdAndRoleAndUserId(stroyAddDTO.getLotId(), role, authLotDTO.getUserId())
-                .orElse(new Stroy(tenderId, authLotDTO.getUserId(), stroyAddDTO.getLotId(), role));
+        //AGAR STROY TOPILSA SHUNGA TEGISHLI HAMMA DETAILSLARNI DELETED TRUE GA OTKIZIB CHIQISH UCHUN
+        Stroy stroy = stroyRepository.findFirstByLotIdAndRoleAndUserIdAAndDeletedIsFalse(stroyAddDTO.getLotId(), role, authLotDTO.getUserId()).orElse(new Stroy());
 
-        if (Objects.nonNull(stroy.getId()))
+        if (Objects.nonNull(stroy.getId())) {
             stroyRepository.deleteAllByUserAndRole(role.name(), authLotDTO.getUserId(), stroy.getId());
+            stroy.setDeleted(true);
+            stroyRepository.save(stroy);
+        }
 
-        stroy.setStrName(stroyAddDTO.getStrName());
-        Stroy saveStroy = stroyRepository.save(stroy);
+        Stroy saveStroy = stroyRepository.save(new Stroy(stroyAddDTO.getStrName(),tenderId, authLotDTO.getUserId(), stroyAddDTO.getLotId(), role));
 
         for (ObjectAddDTO objectAddDTO : stroyAddDTO.getObArray()) {
-            Object saveObj = objectRepository.save(new Object(objectAddDTO.getObName(), objectAddDTO.getObNum(), role, authLotDTO.getUserId(), stroy));
+            Object saveObj = objectRepository.save(new Object(objectAddDTO.getObName(), objectAddDTO.getObNum(), role, authLotDTO.getUserId(), saveStroy));
 
             for (SmetaAddDTO smetaAddDTO : objectAddDTO.getSmArray()) {
                 Smeta saveSmt = smetaRepository.save(new Smeta(smetaAddDTO.getSmName(), smetaAddDTO.getSmNum(), role, authLotDTO.getUserId(), saveObj));

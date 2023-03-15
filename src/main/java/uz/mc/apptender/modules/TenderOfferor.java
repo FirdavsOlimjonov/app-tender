@@ -3,6 +3,7 @@ package uz.mc.apptender.modules;
 import lombok.*;
 import org.hibernate.annotations.DynamicInsert;
 import org.hibernate.annotations.DynamicUpdate;
+import org.hibernate.annotations.Where;
 import uz.mc.apptender.modules.enums.RoleEnum;
 import uz.mc.apptender.modules.templates.AbsTimestampEntity;
 
@@ -17,6 +18,7 @@ import java.math.BigDecimal;
 @Builder
 @DynamicInsert
 @DynamicUpdate
+@Where(clause = "deleted = false")
 public class TenderOfferor extends AbsTimestampEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -57,6 +59,7 @@ public class TenderOfferor extends AbsTimestampEntity {
 
     @ManyToOne(optional = false)
     private Smeta smeta;
+    private boolean deleted = false;
 
     public TenderOfferor(long userId, RoleEnum role, Smeta smeta) {
         this.userId = userId;

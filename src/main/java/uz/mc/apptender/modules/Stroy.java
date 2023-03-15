@@ -6,6 +6,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.DynamicInsert;
 import org.hibernate.annotations.DynamicUpdate;
+import org.hibernate.annotations.Where;
 import uz.mc.apptender.modules.enums.RoleEnum;
 
 import javax.persistence.*;
@@ -18,6 +19,7 @@ import java.util.List;
 @AllArgsConstructor
 @DynamicInsert
 @DynamicUpdate
+@Where(clause = "deleted = false")
 public class Stroy{
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -38,6 +40,7 @@ public class Stroy{
     @Enumerated(EnumType.STRING)
     private RoleEnum role;
 
+    private boolean deleted = false;
     @OneToMany(mappedBy = "stroy",fetch = FetchType.LAZY)
     private List<Object> obArray;
 

@@ -15,16 +15,13 @@ public interface StroyRepository extends JpaRepository<Stroy,Integer> {
 
 
     @Query()
-    Optional<Stroy> findFirstByLotIdAndRoleAndUserId(long lotId, RoleEnum role, long userId);
+    Optional<Stroy> findFirstByLotIdAndRoleAndUserIdAAndDeletedIsFalse(long lotId, RoleEnum role, long userId);
 
     @Modifying
     @Query(value =
-            "DELETE FROM tender_customer WHERE role = :role and user_id = :userId and smeta_id in " +
-                    "(select id from smeta where role = :role and user_id = :userId and object_id in " +
-                        "(select id from object where role = :role and user_id = :userId and stroy_id = :stroyId));\n" +
-            "DELETE FROM smeta WHERE role = :role and user_id = :userId and object_id in " +
-                    "(select id from object where role = :role and user_id = :userId and stroy_id = :stroyId);\n" +
-            "DELETE FROM object WHERE role = :role and user_id = :userId and stroy_id = :stroyId ;"
-            , nativeQuery = true)
+                    "UPDATE tender_customer SET deleted = true WHERE role = :role and user_id = :userId and deleted = false and smeta_id in " +
+                            "(select id from smeta where role = :role and user_id = :userId and deleted = false and object_id in (select id from object where role = :role and user_id = :userId and stroy_id = stroyId and deleted = false));\n" +
+                    "UPDATE smeta SET deleted = true WHERE role = :role and user_id = :userId and deleted = false and object_id in  (select id from object where role = :role and user_id = :userId and stroy_id = stroyId and deleted = false);\n" +
+                    "UPDATE object SET deleted = true WHERE role = :role and user_id = :userId and stroy_id = stroyId and deleted = false;", nativeQuery = true)
     void deleteAllByUserAndRole(@Param("role") String role, @Param("userId")long userId, @Param("stroyId")Integer stroyId);
 }

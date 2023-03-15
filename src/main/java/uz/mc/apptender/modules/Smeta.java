@@ -6,6 +6,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.DynamicInsert;
 import org.hibernate.annotations.DynamicUpdate;
+import org.hibernate.annotations.Where;
 import uz.mc.apptender.modules.enums.RoleEnum;
 import uz.mc.apptender.modules.templates.AbsIntegerEntity;
 
@@ -19,6 +20,7 @@ import java.util.List;
 @AllArgsConstructor
 @DynamicUpdate
 @DynamicInsert
+@Where(clause = "deleted = false")
 public class Smeta{
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -33,6 +35,7 @@ public class Smeta{
     private long userId;
     @ManyToOne(optional = false)
     private Object object;
+    private boolean deleted = false;
     @OneToMany(mappedBy = "smeta",fetch = FetchType.LAZY)
     private List<TenderCustomer> smeta;
 
