@@ -7,6 +7,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.RestTemplate;
@@ -24,7 +25,7 @@ import java.util.*;
 @Service
 @RequiredArgsConstructor
 public class TenderServiceImpl implements TenderService {
-    private final TenderRepository tenderRepository;
+    private final TenderCustomerRepository tenderCustomerRepository;
     private final TenderOfferorRepository tenderOfferorRepository;
     private final StroyRepository stroyRepository;
     private final ObjectRepository objectRepository;
@@ -42,6 +43,7 @@ public class TenderServiceImpl implements TenderService {
     private static final Logger logger = LoggerFactory.getLogger(TenderServiceImpl.class);
 
     @Override
+    @Transactional
     public ApiResult<StroyDTO> add(StroyAddDTO stroyAddDTO) {
         Integer maxTenderId = stroyRepository.findMaxTenderId();
         Integer tenderId = Objects.isNull(maxTenderId) ? 1 : maxTenderId + 1;
@@ -54,20 +56,31 @@ public class TenderServiceImpl implements TenderService {
         List<SmetaDTO> smetaDTOList = new ArrayList<>();
         List<ObjectDTO> objectDTOList = new ArrayList<>();
 
-        Stroy stroy = stroyRepository.save(new Stroy(stroyAddDTO.getStrName(), tenderId, authLotDTO.getUserId()));
+        RoleEnum role = authLotDTO.getRole().toUpperCase().equals(RoleEnum.CUSTOMER.name()) ? RoleEnum.CUSTOMER : RoleEnum.OFFEROR;
+
+        //AGAR CUTOMER BOLSA USTIGA QAYTA YOZADI AGAR OLDINDAN YARATILGAN BOLSA
+        Stroy stroy = stroyRepository.findFirstByLotIdAndRoleAndUserId(stroyAddDTO.getLotId(), role, authLotDTO.getUserId())
+                .orElse(new Stroy(tenderId, authLotDTO.getUserId(), stroyAddDTO.getLotId(), role));
+
+        if (Objects.nonNull(stroy.getId()))
+            stroyRepository.deleteAllByUserAndRole(role.name(), authLotDTO.getUserId(), stroy.getId());
+
+        stroy.setStrName(stroyAddDTO.getStrName());
+        Stroy saveStroy = stroyRepository.save(stroy);
 
         for (ObjectAddDTO objectAddDTO : stroyAddDTO.getObArray()) {
-            Object object = objectRepository.save(new Object(objectAddDTO.getObName(), objectAddDTO.getObNum(), stroy));
+            Object saveObj = objectRepository.save(new Object(objectAddDTO.getObName(), objectAddDTO.getObNum(), role, authLotDTO.getUserId(), stroy));
 
             for (SmetaAddDTO smetaAddDTO : objectAddDTO.getSmArray()) {
-                Smeta smeta = smetaRepository.save(new Smeta(smetaAddDTO.getSmName(), smetaAddDTO.getSmNum(), object));
-                tenderInfoDTOList = saveTender(smeta, smetaAddDTO.getSmeta(), authLotDTO);
-                smetaDTOList.add(mapSmetaToSmetaDTO(smeta, tenderInfoDTOList));
+                Smeta saveSmt = smetaRepository.save(new Smeta(smetaAddDTO.getSmName(), smetaAddDTO.getSmNum(), role, authLotDTO.getUserId(), saveObj));
+
+                tenderInfoDTOList = saveTender(saveSmt, smetaAddDTO.getSmeta(), authLotDTO, role);
+                smetaDTOList.add(mapSmetaToSmetaDTO(saveSmt, tenderInfoDTOList));
             }
-            objectDTOList.add(mapObjectToObjectDTO(object, smetaDTOList));
+            objectDTOList.add(mapObjectToObjectDTO(saveObj, smetaDTOList));
         }
 
-        return ApiResult.successResponse(new StroyDTO(stroy.getId(), stroy.getStrName(), stroy.getTenderId(),
+        return ApiResult.successResponse(new StroyDTO(saveStroy.getId(), saveStroy.getStrName(), saveStroy.getTenderId(),
                 stroyAddDTO.getLotId(), stroyAddDTO.getInn(), authLotDTO.getRole(), objectDTOList));
     }
 
@@ -87,9 +100,9 @@ public class TenderServiceImpl implements TenderService {
 
         try {
             tempTenderDTO = restTemplate.postForObject(uri, requestEntity, TempTenderDTO.class);
-        }catch (HttpClientErrorException | HttpServerErrorException e) {
+        } catch (HttpClientErrorException | HttpServerErrorException e) {
             e.fillInStackTrace();
-            throw RestException.restThrow(e.getMessage(),HttpStatus.BAD_REQUEST);
+            throw RestException.restThrow(e.getMessage(), HttpStatus.BAD_REQUEST);
         }
 
         // EXTRACT ROLE AND CODE FROM THE RESPONSE DTO OBJECT
@@ -99,18 +112,18 @@ public class TenderServiceImpl implements TenderService {
         return ApiResult.successResponse(new TenderAuthDTO(createTenderDTO.getLotId(), createTenderDTO.getInn(), role, code));
     }
 
-    private List<TenderInfoDTO> saveTender(Smeta smeta, List<TenderInfoAddDTO> smetaDtoList, AuthLotDTO authLotDTO) {
+    private List<TenderInfoDTO> saveTender(Smeta smeta, List<TenderInfoAddDTO> smetaDtoList, AuthLotDTO authLotDTO, RoleEnum role) {
         if (Objects.isNull(smetaDtoList))
             throw RestException.restThrow("Smeta array must not be empty", HttpStatus.BAD_REQUEST);
 
         if (authLotDTO.getRole().toUpperCase().equals(RoleEnum.CUSTOMER.name()))
             return smetaDtoList.stream().map(smetaDto -> {
-                TenderCustomer tenderCustomer = tenderRepository.save(mapTenderAddDTOToTender(smetaDto, smeta, authLotDTO));
+                TenderCustomer tenderCustomer = tenderCustomerRepository.save(mapTenderAddDTOToTender(smetaDto, smeta, authLotDTO, role));
                 return mapTenderToTenderDTO(tenderCustomer);
             }).toList();
 
         return smetaDtoList.stream().map(smetaDto -> {
-            TenderOfferor tenderOfferor = tenderOfferorRepository.save(mapTenderAddDTOToTenderOfferor(smetaDto, smeta, authLotDTO));
+            TenderOfferor tenderOfferor = tenderOfferorRepository.save(mapTenderAddDTOToTenderOfferor(smetaDto, smeta, authLotDTO, role));
             return mapTenderToTenderDTO(tenderOfferor);
         }).toList();
     }
@@ -179,7 +192,7 @@ public class TenderServiceImpl implements TenderService {
                 .build();
     }
 
-    private TenderCustomer mapTenderAddDTOToTender(TenderInfoAddDTO tenderInfo, Smeta smeta, AuthLotDTO authLotDTO) {
+    private TenderCustomer mapTenderAddDTOToTender(TenderInfoAddDTO tenderInfo, Smeta smeta, AuthLotDTO authLotDTO, RoleEnum role) {
         return TenderCustomer.builder()
                 .id(tenderInfo.getId())
                 .edIsm(tenderInfo.getEd_ism())
@@ -192,11 +205,11 @@ public class TenderServiceImpl implements TenderService {
                 .summa(tenderInfo.getSumma())
                 .smeta(smeta)
                 .userId(authLotDTO.getUserId())
-                .role(authLotDTO.getRole().toUpperCase().equals(RoleEnum.CUSTOMER.name()) ? RoleEnum.CUSTOMER : RoleEnum.OFFEROR)
+                .role(role)
                 .build();
     }
 
-    private TenderOfferor mapTenderAddDTOToTenderOfferor(TenderInfoAddDTO tenderInfo, Smeta smeta, AuthLotDTO authLotDTO) {
+    private TenderOfferor mapTenderAddDTOToTenderOfferor(TenderInfoAddDTO tenderInfo, Smeta smeta, AuthLotDTO authLotDTO, RoleEnum role) {
         return TenderOfferor.builder()
                 .id(tenderInfo.getId())
                 .edIsm(tenderInfo.getEd_ism())
@@ -209,7 +222,7 @@ public class TenderServiceImpl implements TenderService {
                 .summa(tenderInfo.getSumma())
                 .smeta(smeta)
                 .userId(authLotDTO.getUserId())
-                .role(authLotDTO.getRole().toUpperCase().equals(RoleEnum.CUSTOMER.name()) ? RoleEnum.CUSTOMER : RoleEnum.OFFEROR)
+                .role(role)
                 .build();
     }
 

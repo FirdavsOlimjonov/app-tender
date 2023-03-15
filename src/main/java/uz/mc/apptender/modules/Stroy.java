@@ -4,8 +4,9 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.DynamicInsert;
+import org.hibernate.annotations.DynamicUpdate;
 import uz.mc.apptender.modules.enums.RoleEnum;
-import uz.mc.apptender.modules.templates.AbsIntegerEntity;
 
 import javax.persistence.*;
 import java.util.List;
@@ -15,7 +16,13 @@ import java.util.List;
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
-public class Stroy extends AbsIntegerEntity {
+@DynamicInsert
+@DynamicUpdate
+public class Stroy{
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Integer id;
+
     @Column(nullable = false)
     private String strName;
 
@@ -23,16 +30,29 @@ public class Stroy extends AbsIntegerEntity {
     private Integer tenderId;
 
     @Column(nullable = false)
-    private long userid;
+    private long userId;
 
+    @Column(nullable = false)
+    private long lotId;
+
+    @Enumerated(EnumType.STRING)
     private RoleEnum role;
 
     @OneToMany(mappedBy = "stroy",fetch = FetchType.LAZY)
     private List<Object> obArray;
 
-    public Stroy(String strName, Integer tenderId, long userid) {
+    public Stroy(String strName, Integer tenderId, long userid, long lotId,RoleEnum role) {
         this.strName = strName;
         this.tenderId = tenderId;
-        this.userid = userid;
+        this.userId = userid;
+        this.lotId = lotId;
+        this.role = role;
+    }
+
+    public Stroy(Integer tenderId, long userId, long lotId, RoleEnum role) {
+        this.tenderId = tenderId;
+        this.userId = userId;
+        this.lotId = lotId;
+        this.role = role;
     }
 }

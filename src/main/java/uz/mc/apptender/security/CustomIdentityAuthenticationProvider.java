@@ -23,19 +23,28 @@ public class CustomIdentityAuthenticationProvider implements AuthenticationProvi
     @Value("${app.basic-auth.password}")
     private String basicAuthPassword;
 
+    @Value("${app.basic-auth-offeror.username}")
+    private String basicAuthUsernameOfferor;
+
+    @Value("${app.basic-auth-offeror.password}")
+    private String basicAuthPasswordOfferor;
+
 
     @Override
     public Authentication authenticate(Authentication authentication) {
         String username = authentication.getName();
         String password = authentication.getCredentials().toString();
 
-        if (Objects.isNull(username) || !Objects.equals(username,basicAuthUsername))
+        if (Objects.isNull(username) || Objects.isNull(password))
             throw new BadCredentialsException("Full authentication required!");
 
-        if (Objects.isNull(password) || !Objects.equals(password,basicAuthPassword))
-            throw new BadCredentialsException("Full authentication required!");
+        if ((Objects.equals(username, basicAuthUsername) && Objects.equals(password, basicAuthPassword)))
+            return new UsernamePasswordAuthenticationToken(null, null, null);
 
-        return new UsernamePasswordAuthenticationToken(null, null, null);
+        if ((Objects.equals(username, basicAuthUsernameOfferor) && Objects.equals(password, basicAuthPasswordOfferor)))
+            return new UsernamePasswordAuthenticationToken(null, null, null);
+
+        throw new BadCredentialsException("Full authentication required!");
     }
 
     @Override

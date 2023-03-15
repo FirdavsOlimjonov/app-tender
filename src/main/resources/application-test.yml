@@ -31,5 +31,8 @@ app:
 
   basic-auth:
     username: tender
-    password: ygb237buw
+    password: customer_password
 
+  basic-auth-offeror:
+    username: tender
+    password: offeror_password

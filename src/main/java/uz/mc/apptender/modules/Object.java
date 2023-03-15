@@ -4,7 +4,10 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.DynamicInsert;
+import org.hibernate.annotations.DynamicUpdate;
 import uz.mc.apptender.modules.enums.PermissionEnum;
+import uz.mc.apptender.modules.enums.RoleEnum;
 import uz.mc.apptender.modules.templates.AbsIntegerEntity;
 
 import javax.persistence.*;
@@ -16,19 +19,30 @@ import java.util.Set;
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
-public class Object extends AbsIntegerEntity {
+@DynamicUpdate
+@DynamicInsert
+public class Object{
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Integer id;
     @Column(nullable = false)
     private String obName;
     @Column(nullable = false)
     private String obNum;
+    @Enumerated(EnumType.STRING)
+    private RoleEnum role;
+    @Column(nullable = false)
+    private long userId;
     @ManyToOne(optional = false)
     private Stroy stroy;
     @OneToMany(mappedBy = "object",fetch = FetchType.LAZY)
     private List<Smeta> smArray;
 
-    public Object(String obName, String obNum, Stroy stroy) {
+    public Object(String obName, String obNum, RoleEnum role, long userId, Stroy stroy) {
         this.obName = obName;
         this.obNum = obNum;
+        this.role = role;
+        this.userId = userId;
         this.stroy = stroy;
     }
 }

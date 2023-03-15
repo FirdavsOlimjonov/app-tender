@@ -28,9 +28,12 @@ app:
     password: "password"
     url-send-sms: "https://apistender-test1.mc.uz/api/send-sms-to-lot-user"
     url-get-role: "https://apistender-test1.mc.uz/api/get-role-of-lot-user"
+
   basic-auth:
     username: tender
-    password: ygb237buw
+    password: customer_password
 
-
+  basic-auth-offeror:
+    username: tender
+    password: offeror_password
 

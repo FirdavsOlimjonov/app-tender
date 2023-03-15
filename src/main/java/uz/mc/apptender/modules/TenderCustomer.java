@@ -1,6 +1,8 @@
 package uz.mc.apptender.modules;
 
 import lombok.*;
+import org.hibernate.annotations.DynamicInsert;
+import org.hibernate.annotations.DynamicUpdate;
 import uz.mc.apptender.modules.enums.RoleEnum;
 import uz.mc.apptender.modules.templates.AbsTimestampEntity;
 
@@ -13,7 +15,9 @@ import java.math.BigDecimal;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class TenderCustomer extends AbsTimestampEntity {
+@DynamicInsert
+@DynamicUpdate
+public class TenderCustomer{
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer smId;
@@ -27,7 +31,7 @@ public class TenderCustomer extends AbsTimestampEntity {
     @Column(nullable = false)
     private long userId;
 
-    @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
     private RoleEnum role;
 
 //    @Column(nullable = false)
@@ -54,4 +58,9 @@ public class TenderCustomer extends AbsTimestampEntity {
     @ManyToOne(optional = false)
     private Smeta smeta;
 
+    public TenderCustomer(long userId, RoleEnum role, Smeta smeta) {
+        this.userId = userId;
+        this.role = role;
+        this.smeta = smeta;
+    }
 }
