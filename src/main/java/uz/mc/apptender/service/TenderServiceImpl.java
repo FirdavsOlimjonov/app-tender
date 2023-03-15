@@ -59,7 +59,7 @@ public class TenderServiceImpl implements TenderService {
         RoleEnum role = authLotDTO.getRole().toUpperCase().equals(RoleEnum.CUSTOMER.name()) ? RoleEnum.CUSTOMER : RoleEnum.OFFEROR;
 
         //AGAR STROY TOPILSA SHUNGA TEGISHLI HAMMA DETAILSLARNI DELETED TRUE GA OTKIZIB CHIQISH UCHUN
-        Stroy stroy = stroyRepository.findFirstByLotIdAndRoleAndUserIdAAndDeletedIsFalse(stroyAddDTO.getLotId(), role, authLotDTO.getUserId()).orElse(new Stroy());
+        Stroy stroy = stroyRepository.findFirstByLotIdAndRoleAndUserIdAndDeletedIsFalse(stroyAddDTO.getLotId(), role, authLotDTO.getUserId()).orElse(new Stroy());
 
         if (Objects.nonNull(stroy.getId())) {
             stroyRepository.deleteAllByUserAndRole(role.name(), authLotDTO.getUserId(), stroy.getId());
