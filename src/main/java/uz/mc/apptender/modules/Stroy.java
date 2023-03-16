@@ -8,6 +8,7 @@ import org.hibernate.annotations.DynamicInsert;
 import org.hibernate.annotations.DynamicUpdate;
 import org.hibernate.annotations.Where;
 import uz.mc.apptender.modules.enums.RoleEnum;
+import uz.mc.apptender.modules.templates.AbsTimestampEntity;
 
 import javax.persistence.*;
 import java.util.List;
@@ -20,7 +21,7 @@ import java.util.List;
 @DynamicInsert
 @DynamicUpdate
 @Where(clause = "deleted = false")
-public class Stroy{
+public class Stroy extends AbsTimestampEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;

@@ -10,6 +10,7 @@ import org.hibernate.annotations.Where;
 import uz.mc.apptender.modules.enums.PermissionEnum;
 import uz.mc.apptender.modules.enums.RoleEnum;
 import uz.mc.apptender.modules.templates.AbsIntegerEntity;
+import uz.mc.apptender.modules.templates.AbsTimestampEntity;
 
 import javax.persistence.*;
 import java.util.List;
@@ -23,7 +24,7 @@ import java.util.Set;
 @DynamicUpdate
 @DynamicInsert
 @Where(clause = "deleted = false")
-public class Object{
+public class Object extends AbsTimestampEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;

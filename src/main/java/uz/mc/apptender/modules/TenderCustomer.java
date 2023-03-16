@@ -19,7 +19,7 @@ import java.math.BigDecimal;
 @DynamicInsert
 @DynamicUpdate
 @Where(clause = "deleted = false")
-public class TenderCustomer{
+public class TenderCustomer extends AbsTimestampEntity{
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer smId;

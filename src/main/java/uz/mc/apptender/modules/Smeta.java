@@ -9,6 +9,7 @@ import org.hibernate.annotations.DynamicUpdate;
 import org.hibernate.annotations.Where;
 import uz.mc.apptender.modules.enums.RoleEnum;
 import uz.mc.apptender.modules.templates.AbsIntegerEntity;
+import uz.mc.apptender.modules.templates.AbsTimestampEntity;
 
 import javax.persistence.*;
 import java.util.List;
@@ -21,7 +22,7 @@ import java.util.List;
 @DynamicUpdate
 @DynamicInsert
 @Where(clause = "deleted = false")
-public class Smeta{
+public class Smeta extends AbsTimestampEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
