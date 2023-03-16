@@ -184,14 +184,6 @@ public class ExceptionHelper {
                 HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
-    @ExceptionHandler(value = {MyFileNotFoundException.class})
-    public ResponseEntity<?> handleException(MyFileNotFoundException ex) {
-        ex.printStackTrace();
-        return new ResponseEntity<>(
-                ApiResult.errorResponse("File not found!", 404),
-                HttpStatus.NOT_FOUND);
-    }
-
     @ExceptionHandler(value = {MultipartException.class})
     public ResponseEntity<?> handleException(MultipartException ex) {
         ex.printStackTrace();
