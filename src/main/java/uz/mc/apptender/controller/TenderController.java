@@ -21,5 +21,5 @@ public interface TenderController {
     ApiResult<?> createTender(@RequestBody @Valid CreateTenderDTO createTenderDTO);
 
     @GetMapping("/get-for-offeror")
-    ApiResult<?> getForOfferor(@RequestParam Long inn, @RequestParam Long lot_id);
+    ApiResult<?> getForOfferor(@RequestParam Long inn, @RequestParam("lot_id") Long lot_id);
 }
