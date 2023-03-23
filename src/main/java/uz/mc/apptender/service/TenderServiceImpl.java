@@ -119,16 +119,20 @@ public class TenderServiceImpl implements TenderService {
     }
 
     @Override
-    public ApiResult<?> getForOfferor(Long inn, Long lotId) {
-        AuthLotDTO authLotDTO = sendToGetRoleOfLot(inn, lotId);
+    public ApiResult<?> getForOfferor(Long innOfferor,Long innCustomer,Long lotId) {
+        AuthLotDTO offerorAuthLotDTO = sendToGetRoleOfLot(innOfferor, lotId);
+        AuthLotDTO customerAuthLotDTO = sendToGetRoleOfLot(innCustomer, lotId);
 
         //AGAR OFFERORDAN BOSHQA ODAM KELSA QAYTARAVORADI
-        if (!authLotDTO.getRole().equals(RoleEnum.OFFEROR.name()))
+        if (!offerorAuthLotDTO.getRole().equals(RoleEnum.OFFEROR.name()))
             throw RestException.restThrow("You are not Offeror!", HttpStatus.BAD_REQUEST);
 
+        if (!customerAuthLotDTO.getRole().equals(RoleEnum.CUSTOMER.name()))
+            throw RestException.restThrow("This user not customer!", HttpStatus.BAD_REQUEST);
+
         //SHU OFFERORGA TEGISHLI SHU LOTGA TEGISHLI TENDER MALUMOTLARINI TEKSHIRIB QAYTARISH
-        Stroy stroy = stroyRepository.findFirstByUserIdAndLotId(authLotDTO.getUserId(), lotId).orElseThrow(
-                () -> RestException.restThrow("Not found with user_id and lot_id !", HttpStatus.NOT_FOUND));
+        Stroy stroy = stroyRepository.findFirstByUserIdAndLotId(customerAuthLotDTO.getUserId(), lotId).orElseThrow(
+                () -> RestException.restThrow("Not found customer tender's details with user_id and lot_id !", HttpStatus.NOT_FOUND));
 
         List<ObjectDTO> objectDTOList = new ArrayList<>();
 
@@ -148,7 +152,7 @@ public class TenderServiceImpl implements TenderService {
         }
 
         return ApiResult.successResponse(new StroyDTO(stroy.getId(),stroy.getStrName(), stroy.getTenderId(),
-                stroy.getLotId(), inn, stroy.getRole().name(), objectDTOList));
+                stroy.getLotId(), innOfferor, stroy.getRole().name(), objectDTOList));
     }
 
     private List<TenderInfoDTO> saveTender(Smeta smeta, List<TenderInfoAddDTO> smetaDtoList, AuthLotDTO authLotDTO, RoleEnum role) {
