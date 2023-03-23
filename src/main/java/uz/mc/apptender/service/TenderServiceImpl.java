@@ -124,10 +124,10 @@ public class TenderServiceImpl implements TenderService {
         AuthLotDTO customerAuthLotDTO = sendToGetRoleOfLot(innCustomer, lotId);
 
         //AGAR OFFERORDAN BOSHQA ODAM KELSA QAYTARAVORADI
-        if (!offerorAuthLotDTO.getRole().equals(RoleEnum.OFFEROR.name()))
+        if (!offerorAuthLotDTO.getRole().equals(RoleEnum.OFFEROR.name().toLowerCase()))
             throw RestException.restThrow("You are not Offeror!", HttpStatus.BAD_REQUEST);
 
-        if (!customerAuthLotDTO.getRole().equals(RoleEnum.CUSTOMER.name()))
+        if (!customerAuthLotDTO.getRole().equals(RoleEnum.CUSTOMER.name().toLowerCase()))
             throw RestException.restThrow("This user not customer!", HttpStatus.BAD_REQUEST);
 
         //SHU OFFERORGA TEGISHLI SHU LOTGA TEGISHLI TENDER MALUMOTLARINI TEKSHIRIB QAYTARISH
