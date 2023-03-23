@@ -13,18 +13,18 @@ import javax.validation.constraints.NotNull;
 import java.math.BigDecimal;
 
 @Getter
-@JsonInclude(JsonInclude.Include.NON_NULL)
+//@JsonInclude(JsonInclude.Include.NON_NULL)
 @AllArgsConstructor
 @Builder
 public class TenderInfoDTO {
+    @JsonProperty("SM_ID")
+    private Integer smId;
     @JsonProperty("ID")
     private Integer id;
     @JsonProperty("TYPE")
     private Integer type;
     @JsonProperty("USER_ID")
     private long userId;
-    @JsonProperty("ROLE")
-    private RoleEnum role;
     @JsonProperty("KOD_SNK")
     private String kod_snk;
     @JsonProperty("NAME")

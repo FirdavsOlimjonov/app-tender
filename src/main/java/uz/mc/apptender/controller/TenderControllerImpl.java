@@ -25,8 +25,8 @@ public class TenderControllerImpl implements TenderController {
     }
 
     @Override
-    public ApiResult<?> getForOfferor(Long innOfferor, Long innCustomer, Long lotId) {
-        return tenderService.getForOfferor(innOfferor, innCustomer, lotId);
+    public ApiResult<?> getForOfferor(Long innOfferor, Long lotId) {
+        return tenderService.getForOfferor(innOfferor, lotId);
     }
 
 }

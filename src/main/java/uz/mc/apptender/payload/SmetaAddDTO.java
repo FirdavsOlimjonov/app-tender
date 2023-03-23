@@ -11,6 +11,7 @@ import java.util.List;
 @Getter
 @Setter
 public class SmetaAddDTO {
+    private Integer id;
     @NotBlank(message = MessageConstants.MUST_NOT_BE_BLANK_NAME)
     @NotNull(message = MessageConstants.MUST_NOT_BE_NULL_NAME)
     @JsonProperty("sm_name")

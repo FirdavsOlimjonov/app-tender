@@ -33,9 +33,6 @@ public class TenderCustomer extends AbsTimestampEntity{
     @Column(nullable = false)
     private long userId;
 
-    @Enumerated(EnumType.STRING)
-    private RoleEnum role;
-
 //    @Column(nullable = false)
     private String kodSnk;
 
@@ -61,9 +58,8 @@ public class TenderCustomer extends AbsTimestampEntity{
     private Smeta smeta;
 
     private boolean deleted = false;
-    public TenderCustomer(long userId, RoleEnum role, Smeta smeta) {
+    public TenderCustomer(long userId, Smeta smeta) {
         this.userId = userId;
-        this.role = role;
         this.smeta = smeta;
     }
 }

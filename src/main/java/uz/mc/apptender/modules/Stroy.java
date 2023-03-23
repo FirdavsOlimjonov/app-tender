@@ -33,30 +33,20 @@ public class Stroy extends AbsTimestampEntity {
     private Integer tenderId;
 
     @Column(nullable = false)
-    private long userId;
-
-    @Column(nullable = false)
     private long lotId;
-
-    @Enumerated(EnumType.STRING)
-    private RoleEnum role;
 
     private boolean deleted = false;
     @OneToMany(mappedBy = "stroy",fetch = FetchType.LAZY)
     private List<Object> obArray;
 
-    public Stroy(String strName, Integer tenderId, long userid, long lotId,RoleEnum role) {
+    public Stroy(String strName, Integer tenderId,  long lotId) {
         this.strName = strName;
         this.tenderId = tenderId;
-        this.userId = userid;
         this.lotId = lotId;
-        this.role = role;
     }
 
-    public Stroy(Integer tenderId, long userId, long lotId, RoleEnum role) {
+    public Stroy(Integer tenderId, long lotId) {
         this.tenderId = tenderId;
-        this.userId = userId;
         this.lotId = lotId;
-        this.role = role;
     }
 }

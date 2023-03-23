@@ -19,6 +19,8 @@ public class TenderInfoAddDTO {
 //    @NotNull(message = MessageConstants.MUST_NOT_BE_NULL_USER_ID)
 //    private Integer userId;
 
+    @JsonProperty("SM_ID")
+    private Integer smId;
     @NotNull(message = MessageConstants.MUST_NOT_BE_NULL_ID)
     @JsonProperty("ID")
     private Integer id;

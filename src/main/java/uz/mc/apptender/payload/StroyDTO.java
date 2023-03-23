@@ -26,8 +26,6 @@ public class StroyDTO {
     private Long lotId;
     @JsonProperty("inn")
     private Long inn;
-    @JsonProperty("role")
-    private String role;
     @JsonProperty("ob_array")
     private List<ObjectDTO> obArray;
 }

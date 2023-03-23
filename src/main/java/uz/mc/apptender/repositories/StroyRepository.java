@@ -13,15 +13,24 @@ public interface StroyRepository extends JpaRepository<Stroy,Integer> {
     @Query(value = "select max(tender_id) from stroy", nativeQuery = true)
     Integer findMaxTenderId();
 
-    Optional<Stroy> findFirstByUserIdAndLotId(long userId, long lotId);
 
-    Optional<Stroy> findFirstByLotIdAndRoleAndUserIdAndDeletedIsFalse(long lotId, RoleEnum role, long userId);
+    Optional<Stroy> findFirstByLotId(long lotId);
+
+    Optional<Stroy> findFirstByLotIdAndDeletedIsFalse(long lotId);
 
     @Modifying
     @Query(value =
-                    "UPDATE tender_customer SET deleted = true WHERE role = :role and user_id = :userId and deleted = false and smeta_id in " +
-                            "(select id from smeta where role = :role and user_id = :userId and deleted = false and object_id in (select id from object where role = :role and user_id = :userId and stroy_id = :stroyId and deleted = false));\n" +
-                    "UPDATE smeta SET deleted = true WHERE role = :role and user_id = :userId and deleted = false and object_id in  (select id from object where role = :role and user_id = :userId and stroy_id = :stroyId and deleted = false);\n" +
-                    "UPDATE object SET deleted = true WHERE role = :role and user_id = :userId and stroy_id = :stroyId and deleted = false;", nativeQuery = true)
-    void deleteAllByUserAndRole(@Param("role") String role, @Param("userId")long userId, @Param("stroyId")Integer stroyId);
+                    "UPDATE tender_customer SET deleted = true WHERE user_id = :userId and deleted = false and smeta_id in " +
+                            "(select id from smeta where user_id = :userId and deleted = false and object_id in (select id from object where user_id = :userId and stroy_id = :stroyId and deleted = false));\n" +
+                    "UPDATE smeta SET deleted = true WHERE user_id = :userId and deleted = false and object_id in  (select id from object where user_id = :userId and stroy_id = :stroyId and deleted = false);\n" +
+                    "UPDATE object SET deleted = true WHERE user_id = :userId and stroy_id = :stroyId and deleted = false;", nativeQuery = true)
+    void deleteAllByUser(@Param("userId")long userId, @Param("stroyId")Integer stroyId);
+
+    @Modifying
+    @Query(value =
+            "UPDATE tender_offeror SET deleted = true WHERE  user_id = :userId and deleted = false and smeta_id in " +
+                    "(select id from smeta where role = :role and user_id = :userId and deleted = false and object_id in (select id from object where and user_id = :userId and stroy_id = :stroyId and deleted = false));\n" +
+                    "UPDATE smeta SET deleted = true WHERE user_id = :userId and deleted = false and object_id in  (select id from object where user_id = :userId and stroy_id = :stroyId and deleted = false);\n" +
+                    "UPDATE object SET deleted = true WHERE user_id = :userId and stroy_id = :stroyId and deleted = false;", nativeQuery = true)
+    void deleteAllByUserOfferor(@Param("userId")long userId, @Param("stroyId")Integer stroyId);
 }

@@ -15,6 +15,8 @@ import java.util.List;
 @Getter
 @Setter
 public class ObjectAddDTO {
+    private Integer id;
+
     @NotBlank(message = MessageConstants.MUST_NOT_BE_BLANK_NAME)
     @NotNull(message = MessageConstants.MUST_NOT_BE_NULL_NAME)
     @JsonProperty("ob_name")

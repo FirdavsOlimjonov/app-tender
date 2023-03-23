@@ -12,6 +12,8 @@ import java.util.List;
 
 @Getter
 public class StroyAddDTO {
+    private Integer id;
+
     @NotNull(message = MessageConstants.MUST_NOT_BE_NULL_NAME)
     @NotBlank(message = MessageConstants.MUST_NOT_BE_BLANK_NAME)
     @JsonProperty("str_name")
@@ -24,8 +26,6 @@ public class StroyAddDTO {
     @NotNull(message = MessageConstants.MUST_NOT_BE_NULL_PHONE_NUMBER)
     @JsonProperty("inn")
     private Long inn;
-
-    private String role;
 
     @NotNull(message = MessageConstants.MTB_JSON_NOT_BE_NULL)
     @NotEmpty(message = MessageConstants.MTB_JSON_NOT_BE_EMPTY)

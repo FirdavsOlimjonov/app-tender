@@ -19,7 +19,7 @@ import java.math.BigDecimal;
 @DynamicInsert
 @DynamicUpdate
 @Where(clause = "deleted = false")
-public class TenderOfferor extends AbsTimestampEntity {
+public class TenderOfferor extends AbsTimestampEntity{
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer smId;
@@ -32,9 +32,6 @@ public class TenderOfferor extends AbsTimestampEntity {
 
     @Column(nullable = false)
     private long userId;
-
-    @Enumerated(EnumType.STRING)
-    private RoleEnum role;
 
 //    @Column(nullable = false)
     private String kodSnk;
@@ -51,19 +48,18 @@ public class TenderOfferor extends AbsTimestampEntity {
     @Column(nullable = false,precision=20, scale=10)
     private BigDecimal rashod;
 
-    @Column(nullable = false,precision=20, scale=10)
+    @Column(precision=20, scale=10)
     private BigDecimal price;
 
-    @Column(nullable = false,precision=20, scale=10)
+    @Column(precision=20, scale=10)
     private BigDecimal summa;
 
     @ManyToOne(optional = false)
     private Smeta smeta;
-    private boolean deleted = false;
 
-    public TenderOfferor(long userId, RoleEnum role, Smeta smeta) {
+    private boolean deleted = false;
+    public TenderOfferor(long userId, Smeta smeta) {
         this.userId = userId;
-        this.role = role;
         this.smeta = smeta;
     }
 }

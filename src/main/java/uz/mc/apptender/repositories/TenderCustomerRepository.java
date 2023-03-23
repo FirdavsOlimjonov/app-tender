@@ -9,5 +9,4 @@ import java.util.Optional;
 
 public interface TenderCustomerRepository extends JpaRepository<TenderCustomer,Integer> {
 
-    Optional<TenderCustomer> findFirstByUserIdAndRoleAndSmeta(long userId, RoleEnum role, Smeta smeta);
 }
