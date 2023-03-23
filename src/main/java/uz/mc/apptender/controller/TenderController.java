@@ -1,8 +1,6 @@
 package uz.mc.apptender.controller;
 
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.*;
 import uz.mc.apptender.payload.ApiResult;
 import uz.mc.apptender.payload.CreateTenderDTO;
 import uz.mc.apptender.payload.StroyAddDTO;
@@ -15,9 +13,13 @@ import javax.validation.Valid;
 public interface TenderController {
 
     String ADDRESS_BASE_PATH = RestConstants.BASE_PATH+"tender";
+
     @PostMapping("/add")
     ApiResult<StroyDTO> add(@RequestBody @Valid StroyAddDTO stroyAddDTO);
 
     @PostMapping("/create")
     ApiResult<?> createTender(@RequestBody @Valid CreateTenderDTO createTenderDTO);
+
+    @GetMapping("/get-for-offeror")
+    ApiResult<?> getForOfferor(@RequestParam Long inn, @RequestParam Long lot_id);
 }

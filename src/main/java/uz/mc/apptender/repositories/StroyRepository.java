@@ -13,6 +13,7 @@ public interface StroyRepository extends JpaRepository<Stroy,Integer> {
     @Query(value = "select max(tender_id) from stroy", nativeQuery = true)
     Integer findMaxTenderId();
 
+    Optional<Stroy> findFirstByUserIdAndLotId(long userId, long lotId);
 
     Optional<Stroy> findFirstByLotIdAndRoleAndUserIdAndDeletedIsFalse(long lotId, RoleEnum role, long userId);
 

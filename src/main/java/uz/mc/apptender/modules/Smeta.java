@@ -38,7 +38,10 @@ public class Smeta extends AbsTimestampEntity {
     private Object object;
     private boolean deleted = false;
     @OneToMany(mappedBy = "smeta",fetch = FetchType.LAZY)
-    private List<TenderCustomer> smeta;
+    private List<TenderCustomer> smeta_customer;
+
+    @OneToMany(mappedBy = "smeta",fetch = FetchType.LAZY)
+    private List<TenderOfferor> smeta_offeror;
 
     public Smeta(String smName, String smNum, RoleEnum role, long userId, Object object) {
         this.smName = smName;

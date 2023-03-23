@@ -10,4 +10,6 @@ public interface TenderService {
     ApiResult<StroyDTO> add(StroyAddDTO stroyAddDTO);
 
     ApiResult<?> createTender(CreateTenderDTO createTenderDTO);
+
+    ApiResult<?> getForOfferor(Long inn, Long lotId);
 }

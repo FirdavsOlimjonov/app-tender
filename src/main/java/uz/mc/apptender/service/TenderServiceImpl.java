@@ -5,23 +5,27 @@ import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.*;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.StringUtils;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 import uz.mc.apptender.exeptions.RestException;
-import uz.mc.apptender.modules.*;
 import uz.mc.apptender.modules.Object;
+import uz.mc.apptender.modules.*;
 import uz.mc.apptender.modules.enums.RoleEnum;
 import uz.mc.apptender.payload.*;
 import uz.mc.apptender.repositories.*;
 
 import java.net.URI;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -49,13 +53,11 @@ public class TenderServiceImpl implements TenderService {
         Integer maxTenderId = stroyRepository.findMaxTenderId();
         Integer tenderId = Objects.isNull(maxTenderId) ? 1 : maxTenderId + 1;
 
-        AuthLotDTO authLotDTO = sendToGetRoleOfLot(stroyAddDTO);
+        AuthLotDTO authLotDTO = sendToGetRoleOfLot(stroyAddDTO.getInn(), stroyAddDTO.getLotId());
 
         logger.info(String.format("Request send for get role and auth: role = %s, userId = %s", authLotDTO.getRole(), authLotDTO.getUserId()));
 
         List<TenderInfoDTO> tenderInfoDTOList;
-        List<SmetaDTO> smetaDTOList = new ArrayList<>();
-        List<ObjectDTO> objectDTOList = new ArrayList<>();
 
         RoleEnum role = authLotDTO.getRole().toUpperCase().equals(RoleEnum.CUSTOMER.name()) ? RoleEnum.CUSTOMER : RoleEnum.OFFEROR;
 
@@ -70,8 +72,11 @@ public class TenderServiceImpl implements TenderService {
 
         Stroy saveStroy = stroyRepository.save(new Stroy(stroyAddDTO.getStrName(),tenderId, authLotDTO.getUserId(), stroyAddDTO.getLotId(), role));
 
+        List<ObjectDTO> objectDTOList = new ArrayList<>();
+
         for (ObjectAddDTO objectAddDTO : stroyAddDTO.getObArray()) {
             Object saveObj = objectRepository.save(new Object(objectAddDTO.getObName(), objectAddDTO.getObNum(), role, authLotDTO.getUserId(), saveStroy));
+            List<SmetaDTO> smetaDTOList = new ArrayList<>();
 
             for (SmetaAddDTO smetaAddDTO : objectAddDTO.getSmArray()) {
                 Smeta saveSmt = smetaRepository.save(new Smeta(smetaAddDTO.getSmName(), smetaAddDTO.getSmNum(), role, authLotDTO.getUserId(), saveObj));
@@ -85,7 +90,6 @@ public class TenderServiceImpl implements TenderService {
         return ApiResult.successResponse(new StroyDTO(saveStroy.getId(), saveStroy.getStrName(), saveStroy.getTenderId(),
                 stroyAddDTO.getLotId(), stroyAddDTO.getInn(), authLotDTO.getRole(), objectDTOList));
     }
-
 
     @Override
     public ApiResult<?> createTender(CreateTenderDTO createTenderDTO) {
@@ -114,6 +118,39 @@ public class TenderServiceImpl implements TenderService {
         return ApiResult.successResponse(new TenderAuthDTO(createTenderDTO.getLotId(), createTenderDTO.getInn(), role, code));
     }
 
+    @Override
+    public ApiResult<?> getForOfferor(Long inn, Long lotId) {
+        AuthLotDTO authLotDTO = sendToGetRoleOfLot(inn, lotId);
+
+        //AGAR OFFERORDAN BOSHQA ODAM KELSA QAYTARAVORADI
+        if (!authLotDTO.getRole().equals(RoleEnum.OFFEROR.name()))
+            throw RestException.restThrow("You are not Offeror!", HttpStatus.BAD_REQUEST);
+
+        //SHU OFFERORGA TEGISHLI SHU LOTGA TEGISHLI TENDER MALUMOTLARINI TEKSHIRIB QAYTARISH
+        Stroy stroy = stroyRepository.findFirstByUserIdAndLotId(authLotDTO.getUserId(), lotId).orElseThrow(
+                () -> RestException.restThrow("Not found with user_id and lot_id !", HttpStatus.NOT_FOUND));
+
+        List<ObjectDTO> objectDTOList = new ArrayList<>();
+
+        for (Object object : stroy.getObArray()) {
+            List<SmetaDTO> smetaDTOList = new ArrayList<>();
+
+            for (Smeta smeta : object.getSmArray()) {
+                List<TenderInfoDTO> tenderInfoDTOList = smeta.getSmeta_offeror()
+                        .stream()
+                        .map(this::mapTenderToTenderDTOToGetOfferor)
+                        .toList();
+
+                smetaDTOList.add(mapSmetaToSmetaDTO(smeta, tenderInfoDTOList));
+            }
+
+            objectDTOList.add(mapObjectToObjectDTO(object, smetaDTOList));
+        }
+
+        return ApiResult.successResponse(new StroyDTO(stroy.getId(),stroy.getStrName(), stroy.getTenderId(),
+                stroy.getLotId(), inn, stroy.getRole().name(), objectDTOList));
+    }
+
     private List<TenderInfoDTO> saveTender(Smeta smeta, List<TenderInfoAddDTO> smetaDtoList, AuthLotDTO authLotDTO, RoleEnum role) {
         if (Objects.isNull(smetaDtoList))
             throw RestException.restThrow("Smeta array must not be empty", HttpStatus.BAD_REQUEST);
@@ -130,7 +167,7 @@ public class TenderServiceImpl implements TenderService {
         }).toList();
     }
 
-    private AuthLotDTO sendToGetRoleOfLot(StroyAddDTO stroyAddDTO) {
+    private AuthLotDTO sendToGetRoleOfLot(Long inn, Long lotId) {
         URI uri = UriComponentsBuilder.fromUriString(apiUrlToRole).build().toUri();
 
         HttpHeaders headers = new HttpHeaders();
@@ -138,8 +175,8 @@ public class TenderServiceImpl implements TenderService {
         headers.setBasicAuth(username, password);
 
         //LOT_ID AND INN SEND TO MUHAMMADALI'S SERVER WITH BASIC AUTH
-        logger.info("Send to get role and user_id from Muhammadali's server with inn: " + stroyAddDTO.getInn() + " lod_id: " + stroyAddDTO.getLotId());
-        HttpEntity<CreateTenderDTO> requestEntity = new HttpEntity<>(new CreateTenderDTO(stroyAddDTO.getLotId(), stroyAddDTO.getInn()), headers);
+        logger.info("Send to get role and user_id from Muhammadali's server with inn: " + inn + " lod_id: " + lotId);
+        HttpEntity<CreateTenderDTO> requestEntity = new HttpEntity<>(new CreateTenderDTO(lotId, inn), headers);
 
         JsonNode jsonNode;
         try {
@@ -189,6 +226,22 @@ public class TenderServiceImpl implements TenderService {
                 .norma(tender.getNorma())
                 .rashod(tender.getRashod())
                 .summa(tender.getSumma())
+                .userId(tender.getUserId())
+                .role(tender.getRole())
+                .build();
+    }
+
+    private TenderInfoDTO mapTenderToTenderDTOToGetOfferor(TenderOfferor tender) {
+        return TenderInfoDTO.builder()
+                .ed_ism(tender.getEdIsm())
+                .id(tender.getId())
+                .kod_snk(tender.getKodSnk())
+                .type(tender.getType())
+                .price(null)
+                .name(tender.getName())
+                .norma(tender.getNorma())
+                .rashod(tender.getRashod())
+                .summa(null)
                 .userId(tender.getUserId())
                 .role(tender.getRole())
                 .build();
