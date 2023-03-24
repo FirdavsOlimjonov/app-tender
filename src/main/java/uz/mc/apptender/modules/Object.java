@@ -39,7 +39,7 @@ public class Object extends AbsTimestampEntity {
     @ManyToOne(optional = false)
     private Stroy stroy;
     private boolean deleted = false;
-    @OneToMany(mappedBy = "object",fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "object",fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private List<Smeta> smArray;
 
     public Object(String obName, String obNum, RoleEnum role, long userId, Stroy stroy) {

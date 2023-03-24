@@ -9,5 +9,5 @@ import java.util.Optional;
 
 public interface SmetaRepository extends JpaRepository<Smeta,Integer> {
 
-    Optional<Smeta> findFirstByUserIdAndRoleAndObject(long userId, RoleEnum role, Object object);
+    Optional<Smeta> findFirstByIdAndObject_Id(Integer id, Integer object_id);
 }

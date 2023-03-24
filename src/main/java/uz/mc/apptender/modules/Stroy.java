@@ -36,7 +36,7 @@ public class Stroy extends AbsTimestampEntity {
     private long lotId;
 
     private boolean deleted = false;
-    @OneToMany(mappedBy = "stroy",fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "stroy",fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private List<Object> obArray;
 
     public Stroy(String strName, Integer tenderId,  long lotId) {

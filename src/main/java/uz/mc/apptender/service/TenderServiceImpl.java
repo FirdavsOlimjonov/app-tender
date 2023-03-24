@@ -65,16 +65,14 @@ public class TenderServiceImpl implements TenderService {
         //AGAR STROY TOPILSA SHUNGA TEGISHLI HAMMA DETAILSLARNI DELETED TRUE GA OTKIZIB CHIQISH UCHUN
         Stroy stroy = stroyRepository.findFirstByLotIdAndDeletedIsFalse(stroyAddDTO.getLotId()).orElse(new Stroy());
 
+        //AGAR UPDATE QILISH KERAK BOLSA SHU QISMGA TUSHADI
         if (Objects.nonNull((stroy.getId()))) {
             if (Objects.isNull(stroyAddDTO.getId()))
                 throw RestException.restThrow("Smeta already created with this lot_id! You should give unique id for update this smeta details!");
             return updateTenderFromCustomer(authLotDTO, stroy, stroyAddDTO, role);
         }
 
-        Stroy saveStroy;
-        if (!authLotDTO.getRole().equals(RoleEnum.OFFEROR.name().toLowerCase()))
-            saveStroy = stroyRepository.save(new Stroy(stroyAddDTO.getStrName(), tenderId, stroyAddDTO.getLotId()));
-        else saveStroy = stroy;
+        Stroy saveStroy  = stroyRepository.save(new Stroy(stroyAddDTO.getStrName(), tenderId, stroyAddDTO.getLotId()));
 
         List<ObjectDTO> objectDTOList = new ArrayList<>();
 
@@ -86,7 +84,7 @@ public class TenderServiceImpl implements TenderService {
             for (SmetaAddDTO smetaAddDTO : objectAddDTO.getSmArray()) {
                 Smeta saveSmt = smetaRepository.save(new Smeta(smetaAddDTO.getSmName(), smetaAddDTO.getSmNum(), role, authLotDTO.getUserId(), saveObj));
 
-                tenderInfoDTOList = saveTender(saveSmt, smetaAddDTO.getSmeta(), authLotDTO, role);
+                tenderInfoDTOList = saveTender(saveSmt, smetaAddDTO.getSmeta(), authLotDTO);
                 smetaDTOList.add(mapSmetaToSmetaDTO(saveSmt, tenderInfoDTOList));
             }
             objectDTOList.add(mapObjectToObjectDTO(saveObj, smetaDTOList));
@@ -139,7 +137,7 @@ public class TenderServiceImpl implements TenderService {
                     TenderCustomer tenderCustomer;
 
                     if (Objects.isNull(tenderInfoAddDTO.getSmId()))
-                        tenderCustomer = tenderCustomerRepository.save(mapTenderAddDTOToTender(tenderInfoAddDTO, saveSmt, authLotDTO, role));
+                        tenderCustomer = tenderCustomerRepository.save(mapTenderAddDTOToTender(tenderInfoAddDTO, saveSmt, authLotDTO));
                     else {
 
                         TenderCustomer customer = tenderCustomerRepository.findBySmId(tenderInfoAddDTO.getSmId()).orElseThrow(
@@ -180,13 +178,12 @@ public class TenderServiceImpl implements TenderService {
 
         List<ObjectDTO> objectDTOList = new ArrayList<>();
 
-
         for (ObjectAddDTO objectAddDTO : stroyAddDTO.getObArray()) {
             if (Objects.isNull(objectAddDTO.getId()))
                 throw RestException.restThrow("You should give Object Id!");
 
-            Object object = objectRepository.findById(objectAddDTO.getId()).orElseThrow(
-                    () -> RestException.restThrow("Object not found!", HttpStatus.NOT_FOUND));
+            Object object = objectRepository.findFirstByIdAndStroy_Id(objectAddDTO.getId(), stroy.getId()).orElseThrow(
+                    () -> RestException.restThrow("Object not found! Maybe Object not related to Stroy", HttpStatus.NOT_FOUND));
 
             List<SmetaDTO> smetaDTOList = new ArrayList<>();
 
@@ -194,8 +191,8 @@ public class TenderServiceImpl implements TenderService {
                 if (Objects.isNull(smetaAddDTO.getId()))
                     throw RestException.restThrow("You should give Smeta Id!");
 
-                Smeta smeta = smetaRepository.findById(smetaAddDTO.getId()).orElseThrow(
-                        () -> RestException.restThrow("Smeta not found!", HttpStatus.NOT_FOUND));
+                Smeta smeta = smetaRepository.findFirstByIdAndObject_Id(smetaAddDTO.getId(), object.getId()).orElseThrow(
+                        () -> RestException.restThrow("Smeta not found! Maybe Smeta not related to Object", HttpStatus.NOT_FOUND));
 
                 List<TenderInfoDTO> tenderInfoDTOS = new ArrayList<>();
 
@@ -203,8 +200,8 @@ public class TenderServiceImpl implements TenderService {
                     if (Objects.isNull(tenderInfoAddDTO.getId()))
                         throw RestException.restThrow("You should give SmId!");
 
-                    TenderOfferor tenderOfferor = tenderOfferorRepository.findBySmIdAndUserId(tenderInfoAddDTO.getSmId(), authLotDTO.getUserId())
-                            .orElseThrow(() -> RestException.restThrow("Tender Offeror not found!", HttpStatus.NOT_FOUND));
+                    TenderOfferor tenderOfferor = tenderOfferorRepository.findBySmIdAndUserIdAndSmeta_Id(tenderInfoAddDTO.getSmId(), authLotDTO.getUserId(), smeta.getId())
+                            .orElseThrow(() -> RestException.restThrow("Tender Offeror not found! Maybe TenderOfferor not related to Smeta", HttpStatus.NOT_FOUND));
 
                     tenderOfferor.setPrice(tenderInfoAddDTO.getPrice());
                     tenderOfferor.setSumma(tenderInfoAddDTO.getSumma());
@@ -216,7 +213,6 @@ public class TenderServiceImpl implements TenderService {
                 smetaDTOList.add(mapSmetaToSmetaDTO(smeta, tenderInfoDTOS));
 
             }
-
             objectDTOList.add(mapObjectToObjectDTO(object, smetaDTOList));
 
         }
@@ -258,10 +254,9 @@ public class TenderServiceImpl implements TenderService {
     public ApiResult<?> getForOfferor(Long innOfferor, Long lotId) {
         AuthLotDTO offerorAuthLotDTO = sendToGetRoleOfLot(innOfferor, lotId);
 
-        //AGAR OFFERORDAN BOSHQA ODAM KELSA QAYTARAVORADI
+        //AGAR CUSTOMER BOLIB KELSA HAMMA MALUMOTLARNI QAYTARISH
         if (!offerorAuthLotDTO.getRole().equals(RoleEnum.OFFEROR.name().toLowerCase()))
-            return getForcustomer(offerorAuthLotDTO, lotId, innOfferor);
-
+            return getForCustomer(offerorAuthLotDTO, lotId, innOfferor);
 
         //SHU OFFERORGA TEGISHLI SHU LOTGA TEGISHLI TENDER MALUMOTLARINI TEKSHIRIB QAYTARISH
         Stroy stroy = stroyRepository.findFirstByLotIdAndDeletedIsFalse(lotId).orElseThrow(
@@ -307,7 +302,7 @@ public class TenderServiceImpl implements TenderService {
                 stroy.getLotId(), innOfferor, objectDTOList));
     }
 
-    private ApiResult<?> getForcustomer(AuthLotDTO customerAuthLotDTO, Long lotId, Long innOfferor) {
+    private ApiResult<?> getForCustomer(AuthLotDTO customerAuthLotDTO, Long lotId, Long innOfferor) {
         Stroy stroy = stroyRepository.findFirstByLotIdAndDeletedIsFalse(lotId).orElseThrow(
                 () -> RestException.restThrow("Not found customer tender's details with  lot_id !", HttpStatus.NOT_FOUND));
 
@@ -352,12 +347,12 @@ public class TenderServiceImpl implements TenderService {
                 .build();
     }
 
-    private List<TenderInfoDTO> saveTender(Smeta smeta, List<TenderInfoAddDTO> smetaDtoList, AuthLotDTO authLotDTO, RoleEnum role) {
+    private List<TenderInfoDTO> saveTender(Smeta smeta, List<TenderInfoAddDTO> smetaDtoList, AuthLotDTO authLotDTO) {
         if (Objects.isNull(smetaDtoList))
-            throw RestException.restThrow("Smeta array must not be empty", HttpStatus.BAD_REQUEST);
+            return new ArrayList<>();
 
         return smetaDtoList.stream().map(smetaDto -> {
-            TenderCustomer tenderCustomer = tenderCustomerRepository.save(mapTenderAddDTOToTender(smetaDto, smeta, authLotDTO, role));
+            TenderCustomer tenderCustomer = tenderCustomerRepository.save(mapTenderAddDTOToTender(smetaDto, smeta, authLotDTO));
             return mapTenderToTenderDTO(tenderCustomer);
         }).toList();
 
@@ -427,7 +422,7 @@ public class TenderServiceImpl implements TenderService {
                 .build();
     }
 
-    private TenderCustomer mapTenderAddDTOToTender(TenderInfoAddDTO tenderInfo, Smeta smeta, AuthLotDTO authLotDTO, RoleEnum role) {
+    private TenderCustomer mapTenderAddDTOToTender(TenderInfoAddDTO tenderInfo, Smeta smeta, AuthLotDTO authLotDTO) {
         return TenderCustomer.builder()
                 .id(tenderInfo.getId())
                 .edIsm(tenderInfo.getEd_ism())

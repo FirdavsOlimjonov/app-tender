@@ -9,5 +9,5 @@ import java.util.Optional;
 
 public interface TenderOfferorRepository extends JpaRepository<TenderOfferor,Integer> {
 
-    Optional<TenderOfferor> findBySmIdAndUserId(Integer smId, long userId);
+    Optional<TenderOfferor> findBySmIdAndUserIdAndSmeta_Id(Integer smId, long userId, Integer smeta_id);
 }
