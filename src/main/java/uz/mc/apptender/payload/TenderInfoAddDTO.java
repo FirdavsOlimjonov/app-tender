@@ -50,7 +50,7 @@ public class TenderInfoAddDTO {
 
     @NotNull(message = MessageConstants.MUST_NOT_BE_NULL_RASHOD)
     @JsonProperty("RASHOD")
-    private BigDecimal rashod;
+    private Double rashod;
 
     @NotNull(message = MessageConstants.MUST_NOT_BE_NULL_PRICE)
     @JsonProperty("PRICE")

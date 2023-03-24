@@ -45,13 +45,13 @@ public class TenderOfferor extends AbsTimestampEntity{
     @Column(nullable = false)
     private Double norma;
 
-    @Column(nullable = false,precision=20, scale=10)
-    private BigDecimal rashod;
+    @Column(nullable = false)
+    private Double rashod;
 
-    @Column(precision=20, scale=10)
+    @Column(precision=20, scale=5)
     private BigDecimal price;
 
-    @Column(precision=20, scale=10)
+    @Column(precision=20, scale=5)
     private BigDecimal summa;
 
     @ManyToOne(optional = false)

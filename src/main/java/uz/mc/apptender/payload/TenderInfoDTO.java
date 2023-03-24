@@ -34,7 +34,7 @@ public class TenderInfoDTO {
     @JsonProperty("NORMA")
     private Double norma;
     @JsonProperty("RASHOD")
-    private BigDecimal rashod;
+    private Double rashod;
     @JsonProperty("PRICE")
     private BigDecimal price;
     @JsonProperty("SUMMA")

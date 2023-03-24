@@ -32,7 +32,7 @@ public class Stroy extends AbsTimestampEntity {
     @Column(nullable = false)
     private Integer tenderId;
 
-    @Column(nullable = false)
+    @Column(nullable = false, unique = true)
     private long lotId;
 
     private boolean deleted = false;
