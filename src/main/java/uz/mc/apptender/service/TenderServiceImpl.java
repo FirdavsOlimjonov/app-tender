@@ -67,7 +67,7 @@ public class TenderServiceImpl implements TenderService {
 
         if (Objects.nonNull((stroy.getId()))) {
             if (Objects.isNull(stroyAddDTO.getId()))
-                throw RestException.restThrow("Smeta already created with this id! You should give id for update this smeta details!");
+                throw RestException.restThrow("Smeta already created with this lot_id! You should give unique id for update this smeta details!");
             return updateTenderFromCustomer(authLotDTO, stroy, stroyAddDTO, role);
         }
 
