@@ -58,8 +58,4 @@ public class TenderCustomer extends AbsTimestampEntity{
     private Smeta smeta;
 
     private boolean deleted = false;
-    public TenderCustomer(long userId, Smeta smeta) {
-        this.userId = userId;
-        this.smeta = smeta;
-    }
 }

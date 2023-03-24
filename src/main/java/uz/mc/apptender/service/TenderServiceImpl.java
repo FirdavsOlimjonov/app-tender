@@ -58,7 +58,7 @@ public class TenderServiceImpl implements TenderService {
 
         logger.info(String.format("Request send for get role and auth: role = %s, userId = %s", authLotDTO.getRole(), authLotDTO.getUserId()));
 
-        //AGAR OFFEROR BOLSA UNI FAQAT PRICENI SAQLAYMIZ
+        //AGAR OFFEROR BOLSA UNI FAQAT PRICE VA SUMMA SAQLANADI
         if (role.equals(RoleEnum.OFFEROR))
             return ApiResult.successResponse(saveTenderForOfferor(stroyAddDTO, authLotDTO));
 
@@ -162,7 +162,6 @@ public class TenderServiceImpl implements TenderService {
                 smetaDTOList.add(mapSmetaToSmetaDTO(saveSmt, tenderInfoDTOS));
 
             }
-
             objectDTOList.add(mapObjectToObjectDTO(saveObj, smetaDTOList));
         }
 
@@ -255,7 +254,7 @@ public class TenderServiceImpl implements TenderService {
         AuthLotDTO offerorAuthLotDTO = sendToGetRoleOfLot(innOfferor, lotId);
 
         //AGAR CUSTOMER BOLIB KELSA HAMMA MALUMOTLARNI QAYTARISH
-        if (!offerorAuthLotDTO.getRole().equals(RoleEnum.OFFEROR.name().toLowerCase()))
+        if (offerorAuthLotDTO.getRole().equals(RoleEnum.CUSTOMER.name().toLowerCase()))
             return getForCustomer(offerorAuthLotDTO, lotId, innOfferor);
 
         //SHU OFFERORGA TEGISHLI SHU LOTGA TEGISHLI TENDER MALUMOTLARINI TEKSHIRIB QAYTARISH
@@ -284,14 +283,17 @@ public class TenderServiceImpl implements TenderService {
                             .toList();
                 }
 
-                List<TenderInfoDTO> list2 = new ArrayList<>();
-                if (list.isEmpty())
+                //AGAR LIST BOSH KELSA SHU USER HALI PRICE BILAN SUMMA KIRGIZMAGAN
+                if (list.isEmpty()) {
+                    List<TenderInfoDTO> list2 = new ArrayList<>();
+
                     for (TenderCustomer tenderCustomer : smeta.getSmeta_customer()) {
                         TenderOfferor save = tenderOfferorRepository.save(mapTenderOfferorToTenderCustomer(tenderCustomer, smeta, offerorAuthLotDTO));
                         list2.add(mapTenderToTenderDTO(save));
                     }
+                    list = list2;
+                }
 
-                list = list2.isEmpty() ? list : list2;
                 smetaDTOList.add(mapSmetaToSmetaDTO(smeta, list));
             }
 
@@ -302,7 +304,7 @@ public class TenderServiceImpl implements TenderService {
                 stroy.getLotId(), innOfferor, objectDTOList));
     }
 
-    private ApiResult<?> getForCustomer(AuthLotDTO customerAuthLotDTO, Long lotId, Long innOfferor) {
+    private ApiResult<?> getForCustomer(AuthLotDTO customerAuthLotDTO, Long lotId, Long innCustomer) {
         Stroy stroy = stroyRepository.findFirstByLotIdAndDeletedIsFalse(lotId).orElseThrow(
                 () -> RestException.restThrow("Not found customer tender's details with  lot_id !", HttpStatus.NOT_FOUND));
 
@@ -328,7 +330,7 @@ public class TenderServiceImpl implements TenderService {
         }
 
         return ApiResult.successResponse(new StroyDTO(stroy.getId(), stroy.getStrName(), stroy.getTenderId(),
-                stroy.getLotId(), innOfferor, objectDTOList));
+                stroy.getLotId(), innCustomer, objectDTOList));
     }
 
     private TenderOfferor mapTenderOfferorToTenderCustomer(TenderCustomer tenderCustomer, Smeta smeta, AuthLotDTO offerorAuthLotDTO) {
