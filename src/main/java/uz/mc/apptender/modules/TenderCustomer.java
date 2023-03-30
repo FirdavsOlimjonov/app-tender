@@ -31,7 +31,7 @@ public class TenderCustomer extends AbsTimestampEntity{
     private Integer type;
 
     @Column(nullable = false)
-    private long userId;
+    private Long userId;
 
 //    @Column(nullable = false)
     private String kodSnk;

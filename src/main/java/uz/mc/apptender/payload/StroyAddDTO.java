@@ -21,11 +21,11 @@ public class StroyAddDTO {
 
     @NotNull(message = MessageConstants.MUST_NOT_BE_NULL_LOT_ID)
     @JsonProperty("lot_id")
-    private long lotId;
+    private Long lotId;
 
     @NotNull(message = MessageConstants.MUST_NOT_BE_NULL_PHONE_NUMBER)
     @JsonProperty("inn")
-    private long inn;
+    private Long inn;
 
     @NotNull(message = MessageConstants.MTB_JSON_NOT_BE_NULL)
     @NotEmpty(message = MessageConstants.MTB_JSON_NOT_BE_EMPTY)

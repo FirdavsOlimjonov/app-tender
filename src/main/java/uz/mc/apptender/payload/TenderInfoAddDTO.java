@@ -2,32 +2,26 @@ package uz.mc.apptender.payload;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
-
-import javax.validation.constraints.*;
-
 import lombok.Setter;
 import uz.mc.apptender.utils.MessageConstants;
 
+import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotNull;
 import java.math.BigDecimal;
 
 @Getter
 @Setter
 public class TenderInfoAddDTO {
-    //    @NotNull(message = MessageConstants.MUST_NOT_BE_NULL_CATEGORY_ID)
-//    private Integer catId;
-//
-//    @NotNull(message = MessageConstants.MUST_NOT_BE_NULL_USER_ID)
-//    private Integer userId;
 
     @JsonProperty("SM_ID")
-    private int smId;
+    private Integer smId;
     @NotNull(message = MessageConstants.MUST_NOT_BE_NULL_ID)
     @JsonProperty("ID")
-    private int id;
+    private Integer id;
 
     @NotNull(message = MessageConstants.MUST_NOT_BE_NULL_TYPE)
     @JsonProperty("TYPE")
-    private int type;
+    private Integer type;
 
     //    @NotNull(message = MessageConstants.MUST_NOT_BE_NULL_KOD_SNK)
 //    @NotBlank(message = MessageConstants.MUST_NOT_BE_BLANK_KOD_SNK)

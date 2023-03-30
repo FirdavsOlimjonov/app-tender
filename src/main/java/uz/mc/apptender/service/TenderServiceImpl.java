@@ -22,6 +22,7 @@ import uz.mc.apptender.modules.Object;
 import uz.mc.apptender.modules.*;
 import uz.mc.apptender.modules.enums.RoleEnum;
 import uz.mc.apptender.payload.*;
+import uz.mc.apptender.payload.Error;
 import uz.mc.apptender.repositories.*;
 
 import java.net.URI;
@@ -245,16 +246,15 @@ public class TenderServiceImpl implements TenderService {
 
             String responseBody = e.getResponseBodyAsString();
             ObjectMapper objectMapper = new ObjectMapper();
-            JsonNode jsonNode = null;
+            Error error;
 
             try {
-                jsonNode = objectMapper.readTree(responseBody);
+                error = objectMapper.readValue(responseBody, Error.class);
             } catch (JsonProcessingException ex) {
-                throw RestException.restThrow(e.getMessage(), HttpStatus.BAD_REQUEST);
+                throw RestException.restThrow(responseBody, HttpStatus.BAD_REQUEST);
             }
 
-            String errorMessage = jsonNode.get("error").get(0).asText();
-            throw RestException.restThrow(errorMessage, HttpStatus.BAD_REQUEST);
+            throw RestException.restThrow(error.toString(), HttpStatus.BAD_REQUEST);
         }
 
         // EXTRACT ROLE AND CODE FROM THE RESPONSE DTO OBJECT
@@ -396,16 +396,15 @@ public class TenderServiceImpl implements TenderService {
 
             String responseBody = e.getResponseBodyAsString();
             ObjectMapper objectMapper = new ObjectMapper();
-            JsonNode jsonNodeError = null;
+            Error error;
 
             try {
-                jsonNodeError = objectMapper.readTree(responseBody);
+                 error = objectMapper.readValue(responseBody, Error.class);
             } catch (JsonProcessingException ex) {
-                throw RestException.restThrow(e.getMessage(), HttpStatus.BAD_REQUEST);
+                throw RestException.restThrow(responseBody, HttpStatus.BAD_REQUEST);
             }
 
-            String errorMessage = jsonNodeError.get("error").get(0).asText();
-            throw RestException.restThrow(errorMessage, HttpStatus.BAD_REQUEST);
+            throw RestException.restThrow(error.toString(), HttpStatus.BAD_REQUEST);
         }
 
         AuthLotDTO authLotDTO = new AuthLotDTO();
