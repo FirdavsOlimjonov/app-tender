@@ -1,6 +1,8 @@
 package uz.mc.apptender.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -239,7 +241,20 @@ public class TenderServiceImpl implements TenderService {
             tempTenderDTO = restTemplate.postForObject(uri, requestEntity, TempTenderDTO.class);
         } catch (HttpClientErrorException | HttpServerErrorException e) {
             e.fillInStackTrace();
-            throw RestException.restThrow(e.getMessage(), HttpStatus.BAD_REQUEST);
+            logger.error(e.getMessage()+"  inn: "+createTenderDTO.getInn()+", lot_id: "+createTenderDTO.getLotId());
+
+            String responseBody = e.getResponseBodyAsString();
+            ObjectMapper objectMapper = new ObjectMapper();
+            JsonNode jsonNode = null;
+
+            try {
+                jsonNode = objectMapper.readTree(responseBody);
+            } catch (JsonProcessingException ex) {
+                throw RestException.restThrow(e.getMessage(), HttpStatus.BAD_REQUEST);
+            }
+
+            String errorMessage = jsonNode.get("error").get(0).asText();
+            throw RestException.restThrow(errorMessage, HttpStatus.BAD_REQUEST);
         }
 
         // EXTRACT ROLE AND CODE FROM THE RESPONSE DTO OBJECT
@@ -250,6 +265,7 @@ public class TenderServiceImpl implements TenderService {
     }
 
     @Override
+    @Transactional
     public ApiResult<?> getForOfferor(Long innOfferor, Long lotId) {
         AuthLotDTO offerorAuthLotDTO = sendToGetRoleOfLot(innOfferor, lotId);
 
@@ -376,7 +392,20 @@ public class TenderServiceImpl implements TenderService {
             jsonNode = restTemplate.postForObject(uri, requestEntity, JsonNode.class);
         } catch (HttpClientErrorException | HttpServerErrorException e) {
             e.fillInStackTrace();
-            throw RestException.restThrow("Invalid inn or lot id", HttpStatus.BAD_REQUEST);
+            logger.error(e.getMessage()+"  inn: "+inn+", lot_id: "+lotId);
+
+            String responseBody = e.getResponseBodyAsString();
+            ObjectMapper objectMapper = new ObjectMapper();
+            JsonNode jsonNodeError = null;
+
+            try {
+                jsonNodeError = objectMapper.readTree(responseBody);
+            } catch (JsonProcessingException ex) {
+                throw RestException.restThrow(e.getMessage(), HttpStatus.BAD_REQUEST);
+            }
+
+            String errorMessage = jsonNodeError.get("error").get(0).asText();
+            throw RestException.restThrow(errorMessage, HttpStatus.BAD_REQUEST);
         }
 
         AuthLotDTO authLotDTO = new AuthLotDTO();

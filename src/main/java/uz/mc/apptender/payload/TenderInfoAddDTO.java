@@ -20,14 +20,14 @@ public class TenderInfoAddDTO {
 //    private Integer userId;
 
     @JsonProperty("SM_ID")
-    private Integer smId;
+    private int smId;
     @NotNull(message = MessageConstants.MUST_NOT_BE_NULL_ID)
     @JsonProperty("ID")
-    private Integer id;
+    private int id;
 
     @NotNull(message = MessageConstants.MUST_NOT_BE_NULL_TYPE)
     @JsonProperty("TYPE")
-    private Integer type;
+    private int type;
 
     //    @NotNull(message = MessageConstants.MUST_NOT_BE_NULL_KOD_SNK)
 //    @NotBlank(message = MessageConstants.MUST_NOT_BE_BLANK_KOD_SNK)

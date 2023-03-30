@@ -14,7 +14,7 @@ public class ErrorData {
     private String errorMsg;
 
     //XATOLIK KODI
-    private Integer errorCode;
+    private int errorCode;
 
     //QAYSI FIELD XATO EKANLIGI
     private String fieldName;

@@ -19,9 +19,9 @@ import java.util.List;
 public class CreateTenderDTO {
     @NotNull(message = MessageConstants.MUST_NOT_BE_NULL_LOT_ID)
     @JsonProperty("lot_id")
-    private Long lotId;
+    private long lotId;
 
     @NotNull(message = MessageConstants.MUST_NOT_BE_NULL_PHONE_NUMBER)
     @JsonProperty("inn")
-    private Long inn;
+    private long inn;
 }
