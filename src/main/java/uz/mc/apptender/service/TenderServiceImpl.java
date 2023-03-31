@@ -254,7 +254,7 @@ public class TenderServiceImpl implements TenderService {
                 throw RestException.restThrow(responseBody, HttpStatus.BAD_REQUEST);
             }
 
-            throw RestException.restThrow(error.toString(), HttpStatus.BAD_REQUEST);
+            throw RestException.restThrow(error.toString(), HttpStatus.resolve(error.getCode()));
         }
 
         // EXTRACT ROLE AND CODE FROM THE RESPONSE DTO OBJECT
@@ -404,7 +404,7 @@ public class TenderServiceImpl implements TenderService {
                 throw RestException.restThrow(responseBody, HttpStatus.BAD_REQUEST);
             }
 
-            throw RestException.restThrow(error.toString(), HttpStatus.BAD_REQUEST);
+            throw RestException.restThrow(error.toString(), HttpStatus.resolve(error.getCode()));
         }
 
         AuthLotDTO authLotDTO = new AuthLotDTO();

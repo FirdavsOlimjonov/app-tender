@@ -6,20 +6,18 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.util.List;
-import java.util.concurrent.Executor;
 
 @Getter
 @Setter
-@NoArgsConstructor
 @AllArgsConstructor
-public class Error extends RuntimeException {
-    List<LotAndInnErrorResponse> error;
-    int code;
+@NoArgsConstructor
+public class LotAndInnErrorResponse {
+    List<String> inn;
+    List<String> lot_id;
 
     @Override
     public String toString() {
-        return "error: "+error+
-                ", code: "+code;
+        return  "inn: " + inn +
+                ", lot_id: " + lot_id;
     }
 }
-
