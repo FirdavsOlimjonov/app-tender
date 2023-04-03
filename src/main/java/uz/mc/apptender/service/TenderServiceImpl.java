@@ -244,7 +244,7 @@ public class TenderServiceImpl implements TenderService {
             tempTenderDTO = restTemplate.postForObject(uri, requestEntity, TempTenderDTO.class);
         } catch (HttpClientErrorException | HttpServerErrorException e) {
             e.fillInStackTrace();
-            logger.error(e.getMessage()+"  inn: "+createTenderDTO.getInn()+", lot_id: "+createTenderDTO.getLotId());
+            logger.error(e.getMessage() + "  inn: " + createTenderDTO.getInn() + ", lot_id: " + createTenderDTO.getLotId());
 
             String responseBody = e.getResponseBodyAsString();
             ObjectMapper objectMapper = new ObjectMapper();
@@ -291,7 +291,7 @@ public class TenderServiceImpl implements TenderService {
                 //AGAR OLDIN OFFEROR YUBORILMAGAN BOLSA
                 if (smetaOfferor.isEmpty()) {
                     for (TenderCustomer tenderCustomer : smeta.getSmeta_customer()) {
-                        TenderOfferor save = tenderOfferorRepository.save(mapTenderOfferorToTenderCustomer(tenderCustomer, smeta, offerorAuthLotDTO));
+                        TenderOfferor save = tenderOfferorRepository.save(mapTenderOfferorToTenderCustomer(tenderCustomer, smeta, offerorAuthLotDTO, stroy.getLotId()));
                         list.add(mapTenderToTenderDTO(save));
                     }
                 } else {
@@ -306,7 +306,7 @@ public class TenderServiceImpl implements TenderService {
                     List<TenderInfoDTO> list2 = new ArrayList<>();
 
                     for (TenderCustomer tenderCustomer : smeta.getSmeta_customer()) {
-                        TenderOfferor save = tenderOfferorRepository.save(mapTenderOfferorToTenderCustomer(tenderCustomer, smeta, offerorAuthLotDTO));
+                        TenderOfferor save = tenderOfferorRepository.save(mapTenderOfferorToTenderCustomer(tenderCustomer, smeta, offerorAuthLotDTO, stroy.getLotId()));
                         list2.add(mapTenderToTenderDTO(save));
                     }
                     list = list2;
@@ -351,7 +351,7 @@ public class TenderServiceImpl implements TenderService {
                 stroy.getLotId(), innCustomer, objectDTOList));
     }
 
-    private TenderOfferor mapTenderOfferorToTenderCustomer(TenderCustomer tenderCustomer, Smeta smeta, AuthLotDTO offerorAuthLotDTO) {
+    private TenderOfferor mapTenderOfferorToTenderCustomer(TenderCustomer tenderCustomer, Smeta smeta, AuthLotDTO offerorAuthLotDTO, long lotId) {
         return TenderOfferor.builder()
                 .norma(tenderCustomer.getNorma())
                 .price(null)
@@ -363,13 +363,13 @@ public class TenderServiceImpl implements TenderService {
                 .edIsm(tenderCustomer.getEdIsm())
                 .id(tenderCustomer.getId())
                 .smeta(smeta)
+                .lotId(lotId)
                 .userId(offerorAuthLotDTO.getUserId())
                 .build();
     }
 
     private List<TenderInfoDTO> saveTender(Smeta smeta, List<TenderInfoAddDTO> smetaDtoList, AuthLotDTO authLotDTO) {
-        if (Objects.isNull(smetaDtoList))
-            return new ArrayList<>();
+        if (Objects.isNull(smetaDtoList)) return new ArrayList<>();
 
         return smetaDtoList.stream().map(smetaDto -> {
             TenderCustomer tenderCustomer = tenderCustomerRepository.save(mapTenderAddDTOToTender(smetaDto, smeta, authLotDTO));
