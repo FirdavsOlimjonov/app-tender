@@ -146,7 +146,7 @@ public class TenderServiceImpl implements TenderService {
                     else {
 
                         TenderCustomer customer = tenderCustomerRepository.findBySmId(tenderInfoAddDTO.getSmId()).orElseThrow(
-                                () -> RestException.restThrow("Smeta  not found !" + tenderInfoAddDTO.getSmId()));
+                                () -> RestException.restThrow("Tender details not found !" + tenderInfoAddDTO.getSmId()));
 
                         customer.setEdIsm(tenderInfoAddDTO.getEd_ism());
                         customer.setId(tenderInfoAddDTO.getId());

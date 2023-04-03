@@ -34,5 +34,4 @@ public interface StroyRepository extends JpaRepository<Stroy,Integer> {
                     "UPDATE object SET deleted = true WHERE user_id = :userId and stroy_id = :stroyId and deleted = false;", nativeQuery = true)
     void deleteAllByUserOfferor(@Param("userId")long userId, @Param("stroyId")Integer stroyId);
 
-    boolean existsByLotIdAnd();
 }
