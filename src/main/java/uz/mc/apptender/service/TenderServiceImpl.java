@@ -72,8 +72,13 @@ public class TenderServiceImpl implements TenderService {
         if (Objects.nonNull((stroy.getId()))) {
             if (Objects.isNull(stroyAddDTO.getId()))
                 throw RestException.restThrow("Smeta already created with this lot_id! You should give unique id for update this smeta details!");
+
+            logger.info(String.format("Update stroy: lot_id = %s, userId = %s", stroyAddDTO.getLotId(), authLotDTO.getUserId()));
+
             return updateTenderFromCustomer(authLotDTO, stroy, stroyAddDTO, role);
         }
+
+        logger.info(String.format("Create stroy: lot_id = %s, userId = %s", stroyAddDTO.getLotId(), authLotDTO.getUserId()));
 
         Stroy saveStroy  = stroyRepository.save(new Stroy(stroyAddDTO.getStrName(), tenderId, stroyAddDTO.getLotId()));
 
@@ -279,6 +284,8 @@ public class TenderServiceImpl implements TenderService {
         Stroy stroy = stroyRepository.findFirstByLotIdAndDeletedIsFalse(lotId).orElseThrow(
                 () -> RestException.restThrow("Not found customer tender's details with  lot_id !", HttpStatus.NOT_FOUND));
 
+        logger.info(String.format("Get all details for offeror: lot_id = %s, userId = %s", lotId, offerorAuthLotDTO.getUserId()));
+
         List<ObjectDTO> objectDTOList = new ArrayList<>();
 
         for (Object object : stroy.getObArray()) {
@@ -325,6 +332,8 @@ public class TenderServiceImpl implements TenderService {
     private ApiResult<?> getForCustomer(AuthLotDTO customerAuthLotDTO, Long lotId, Long innCustomer) {
         Stroy stroy = stroyRepository.findFirstByLotIdAndDeletedIsFalse(lotId).orElseThrow(
                 () -> RestException.restThrow("Not found customer tender's details with  lot_id !", HttpStatus.NOT_FOUND));
+
+        logger.info(String.format("Get all details for customer: lot_id = %s, userId = %s", lotId, customerAuthLotDTO.getUserId()));
 
         List<ObjectDTO> objectDTOList = new ArrayList<>();
 
