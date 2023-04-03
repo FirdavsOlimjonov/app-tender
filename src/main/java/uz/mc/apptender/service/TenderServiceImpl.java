@@ -98,6 +98,8 @@ public class TenderServiceImpl implements TenderService {
     }
 
     private ApiResult<StroyDTO> updateTenderFromCustomer(AuthLotDTO authLotDTO, Stroy stroy, StroyAddDTO stroyAddDTO, RoleEnum role) {
+        if (tenderOfferorRepository.existsByLotId(stroy.getLotId()))
+            throw RestException.restThrow("Offeror already created this tender!", HttpStatus.BAD_REQUEST);
 
         stroy.setStrName(stroyAddDTO.getStrName());
         Stroy save = stroyRepository.save(stroy);
@@ -182,7 +184,7 @@ public class TenderServiceImpl implements TenderService {
 
         for (ObjectAddDTO objectAddDTO : stroyAddDTO.getObArray()) {
             if (Objects.isNull(objectAddDTO.getId()))
-                throw RestException.restThrow("You should give Object Id!");
+                throw RestException.restThrow("You should give Object Id!", HttpStatus.BAD_REQUEST);
 
             Object object = objectRepository.findFirstByIdAndStroy_Id(objectAddDTO.getId(), stroy.getId()).orElseThrow(
                     () -> RestException.restThrow("Object not found! Maybe Object not related to Stroy", HttpStatus.NOT_FOUND));
@@ -191,7 +193,7 @@ public class TenderServiceImpl implements TenderService {
 
             for (SmetaAddDTO smetaAddDTO : objectAddDTO.getSmArray()) {
                 if (Objects.isNull(smetaAddDTO.getId()))
-                    throw RestException.restThrow("You should give Smeta Id!");
+                    throw RestException.restThrow("You should give Smeta Id!", HttpStatus.BAD_REQUEST);
 
                 Smeta smeta = smetaRepository.findFirstByIdAndObject_Id(smetaAddDTO.getId(), object.getId()).orElseThrow(
                         () -> RestException.restThrow("Smeta not found! Maybe Smeta not related to Object", HttpStatus.NOT_FOUND));

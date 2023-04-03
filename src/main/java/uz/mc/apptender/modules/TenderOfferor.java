@@ -58,4 +58,7 @@ public class TenderOfferor extends AbsTimestampEntity{
     private Smeta smeta;
 
     private boolean deleted = false;
+
+    @Column(nullable = false)
+    private long lotId;
 }
