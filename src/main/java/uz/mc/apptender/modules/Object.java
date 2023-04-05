@@ -28,24 +28,27 @@ public class Object extends AbsTimestampEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
+
     @Column(nullable = false)
     private String obName;
+
     @Column(nullable = false)
     private String obNum;
-    @Enumerated(EnumType.STRING)
-    private RoleEnum role;
+
     @Column(nullable = false)
     private long userId;
+
     @ManyToOne(optional = false)
     private Stroy stroy;
+
     private boolean deleted = false;
+
     @OneToMany(mappedBy = "object",fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private List<Smeta> smArray;
 
-    public Object(String obName, String obNum, RoleEnum role, long userId, Stroy stroy) {
+    public Object(String obName, String obNum, long userId, Stroy stroy) {
         this.obName = obName;
         this.obNum = obNum;
-        this.role = role;
         this.userId = userId;
         this.stroy = stroy;
     }

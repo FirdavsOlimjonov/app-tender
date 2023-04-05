@@ -23,6 +23,7 @@ import uz.mc.apptender.modules.*;
 import uz.mc.apptender.modules.enums.RoleEnum;
 import uz.mc.apptender.payload.*;
 import uz.mc.apptender.payload.Error;
+import uz.mc.apptender.payload.projections.SmetaGetProjection;
 import uz.mc.apptender.repositories.*;
 
 import java.net.URI;
@@ -38,6 +39,7 @@ public class TenderServiceImpl implements TenderService {
     private final StroyRepository stroyRepository;
     private final ObjectRepository objectRepository;
     private final SmetaRepository smetaRepository;
+    private final SmetaItogRepository smetaItogRepository;
     private final RestTemplate restTemplate = new RestTemplate();
 
     @Value("${app.rest-template.username}")
@@ -75,7 +77,7 @@ public class TenderServiceImpl implements TenderService {
 
             logger.info(String.format("Update stroy: lot_id = %s, userId = %s", stroyAddDTO.getLotId(), authLotDTO.getUserId()));
 
-            return updateTenderFromCustomer(authLotDTO, stroy, stroyAddDTO, role);
+            return updateTenderFromCustomer(authLotDTO, stroy, stroyAddDTO);
         }
 
         logger.info(String.format("Create stroy: lot_id = %s, userId = %s", stroyAddDTO.getLotId(), authLotDTO.getUserId()));
@@ -85,15 +87,16 @@ public class TenderServiceImpl implements TenderService {
         List<ObjectDTO> objectDTOList = new ArrayList<>();
 
         for (ObjectAddDTO objectAddDTO : stroyAddDTO.getObArray()) {
-            Object saveObj = objectRepository.save(new Object(objectAddDTO.getObName(), objectAddDTO.getObNum(), role, authLotDTO.getUserId(), saveStroy));
+            Object saveObj = objectRepository.save(new Object(objectAddDTO.getObName(), objectAddDTO.getObNum(), authLotDTO.getUserId(), saveStroy));
             List<SmetaDTO> smetaDTOList = new ArrayList<>();
             List<TenderInfoDTO> tenderInfoDTOList;
 
             for (SmetaAddDTO smetaAddDTO : objectAddDTO.getSmArray()) {
-                Smeta saveSmt = smetaRepository.save(new Smeta(smetaAddDTO.getSmName(), smetaAddDTO.getSmNum(), role, authLotDTO.getUserId(), saveObj));
+                Smeta saveSmt = smetaRepository.save(new Smeta(smetaAddDTO.getSmName(), smetaAddDTO.getSmNum(), authLotDTO.getUserId(), saveObj));
 
                 tenderInfoDTOList = saveTender(saveSmt, smetaAddDTO.getSmeta(), authLotDTO);
-                smetaDTOList.add(mapSmetaToSmetaDTO(saveSmt, tenderInfoDTOList));
+                SmetaItog smetaItog = smetaItogRepository.save(mapSmetaItogToSmetaItogAddDTO(smetaAddDTO.getSmetaItog(), saveSmt));
+                smetaDTOList.add(mapSmetaToSmetaDTO(saveSmt, tenderInfoDTOList, mapSmetaItogToSmetaItogDTO(smetaItog)));
             }
             objectDTOList.add(mapObjectToObjectDTO(saveObj, smetaDTOList));
         }
@@ -102,7 +105,7 @@ public class TenderServiceImpl implements TenderService {
                 stroyAddDTO.getLotId(), stroyAddDTO.getInn(), objectDTOList));
     }
 
-    private ApiResult<StroyDTO> updateTenderFromCustomer(AuthLotDTO authLotDTO, Stroy stroy, StroyAddDTO stroyAddDTO, RoleEnum role) {
+    private ApiResult<StroyDTO> updateTenderFromCustomer(AuthLotDTO authLotDTO, Stroy stroy, StroyAddDTO stroyAddDTO) {
         if (tenderOfferorRepository.existsByLotId(stroy.getLotId()))
             throw RestException.restThrow("Offeror already created this tender!", HttpStatus.BAD_REQUEST);
 
@@ -110,7 +113,7 @@ public class TenderServiceImpl implements TenderService {
         if (!Objects.equals(stroy.getStrName(), stroyAddDTO.getStrName())) {
             stroy.setStrName(stroyAddDTO.getStrName());
             save = stroyRepository.save(stroy);
-        }else save = stroy;
+        } else save = stroy;
 
         List<ObjectDTO> objectDTOList = new ArrayList<>();
 
@@ -119,60 +122,56 @@ public class TenderServiceImpl implements TenderService {
             List<SmetaDTO> smetaDTOList = new ArrayList<>();
 
             if (Objects.isNull(objectAddDTO.getId()))
-                saveObj = objectRepository.save(new Object(objectAddDTO.getObName(), objectAddDTO.getObNum(), role, authLotDTO.getUserId(), save));
+                saveObj = objectRepository.save(new Object(objectAddDTO.getObName(), objectAddDTO.getObNum(), authLotDTO.getUserId(), save));
             else {
-                Object object = objectRepository.findFirstByIdAndStroy_Id(objectAddDTO.getId(),save.getId()).orElseThrow(
+                Object object = objectRepository.findFirstByIdAndStroy_Id(objectAddDTO.getId(), save.getId()).orElseThrow(
                         () -> RestException.restThrow("Object not found! Maybe Object not related to Stroy! obj_id:" + objectAddDTO.getId(), HttpStatus.NOT_FOUND));
 
                 object.setObName(objectAddDTO.getObName());
-                object.setRole(role);
+                object.setObNum(objectAddDTO.getObNum());
+
                 saveObj = objectRepository.save(object);
             }
 
             for (SmetaAddDTO smetaAddDTO : objectAddDTO.getSmArray()) {
                 Smeta saveSmt;
-                List<TenderInfoDTO> tenderInfoDTOS = new ArrayList<>();
+                SmetaItog smetaItog;
 
-                if (Objects.isNull(smetaAddDTO.getId()))
-                    saveSmt = smetaRepository.save(new Smeta(smetaAddDTO.getSmName(), smetaAddDTO.getSmNum(), role, authLotDTO.getUserId(), saveObj));
-                else {
+                if (Objects.isNull(smetaAddDTO.getId())) {
+                    saveSmt = smetaRepository.save(new Smeta(smetaAddDTO.getSmName(), smetaAddDTO.getSmNum(), authLotDTO.getUserId(), saveObj));
+                    smetaItog = smetaItogRepository.save(mapSmetaItogToSmetaItogAddDTO(smetaAddDTO.getSmetaItog(), saveSmt));
+                } else {
                     Smeta smeta = smetaRepository.findFirstByIdAndObject_Id(smetaAddDTO.getId(), saveObj.getId()).orElseThrow(
                             () -> RestException.restThrow("Smeta not found! Maybe Smeta not related to Object! smeta_id: " + smetaAddDTO.getId(), HttpStatus.NOT_FOUND));
 
                     smeta.setSmName(smetaAddDTO.getSmName());
                     smeta.setSmNum(smetaAddDTO.getSmNum());
-                    smeta.setRole(role);
 
                     saveSmt = smetaRepository.save(smeta);
+
+                    SmetaItog smetaItogFind = smetaItogRepository.findBySmeta_Id(saveSmt.getId()).orElseThrow(
+                            () -> RestException.restThrow("SmetaItog not found! Maybe SmetaItog not related to this Smeta! smeta_id: " + smetaAddDTO.getId(), HttpStatus.NOT_FOUND));
+
+                    SmetaItogAddDTO smetaItogAddDTO = smetaAddDTO.getSmetaItog();
+
+                    smetaItogFind.setZatrTrud(smetaItogAddDTO.getZatrTrud());
+                    smetaItogFind.setSummaZp(smetaItogAddDTO.getSummaZp());
+                    smetaItogFind.setSummaExp(smetaItogAddDTO.getSummaExp());
+                    smetaItogFind.setSummaMat(smetaItogAddDTO.getSummaMat());
+                    smetaItogFind.setSummaObo(smetaItogAddDTO.getSummaObo());
+                    smetaItogFind.setItogPr(smetaItogAddDTO.getItogPr());
+                    smetaItogFind.setSummaPph(smetaItogAddDTO.getSummaPph());
+                    smetaItogFind.setSummaPzp(smetaItogAddDTO.getSummaPzp());
+                    smetaItogFind.setSummaSso(smetaItogAddDTO.getSummaSso());
+                    smetaItogFind.setSummaKr(smetaItogAddDTO.getSummaKr());
+                    smetaItogFind.setSummaNds(smetaItogAddDTO.getSummaNds());
+                    smetaItogFind.setItogAll(smetaItogAddDTO.getItogAll());
+
+                    smetaItog = smetaItogRepository.save(smetaItogFind);
                 }
 
-                for (TenderInfoAddDTO tenderInfoAddDTO : smetaAddDTO.getSmeta()) {
-                    TenderCustomer tenderCustomer;
-
-                    if (Objects.isNull(tenderInfoAddDTO.getSmId()))
-                        tenderCustomer = tenderCustomerRepository.save(mapTenderAddDTOToTender(tenderInfoAddDTO, saveSmt, authLotDTO));
-                    else {
-
-                        TenderCustomer customer = tenderCustomerRepository.findBySmIdAndSmeta_Id(tenderInfoAddDTO.getSmId(), saveSmt.getId()).orElseThrow(
-                                () -> RestException.restThrow("Tender Offeror not found! Maybe TenderOfferor not related to Smeta! id: " + tenderInfoAddDTO.getSmId(), HttpStatus.NOT_FOUND));
-
-                        customer.setEdIsm(tenderInfoAddDTO.getEd_ism());
-                        customer.setId(tenderInfoAddDTO.getId());
-                        customer.setType(tenderInfoAddDTO.getType());
-                        customer.setRashod(tenderInfoAddDTO.getRashod());
-                        customer.setNorma(tenderInfoAddDTO.getNorma());
-                        customer.setSumma(tenderInfoAddDTO.getSumma());
-                        customer.setKodSnk(tenderInfoAddDTO.getKod_snk());
-                        customer.setPrice(tenderInfoAddDTO.getPrice());
-                        customer.setName(tenderInfoAddDTO.getName());
-
-                        tenderCustomer = tenderCustomerRepository.save(customer);
-
-                    }
-                    tenderInfoDTOS.add(mapTenderToTenderDTO(tenderCustomer));
-
-                }
-                smetaDTOList.add(mapSmetaToSmetaDTO(saveSmt, tenderInfoDTOS));
+                List<TenderInfoDTO> tenderInfoDTOS = updateTenderInfoAddDTOList(smetaAddDTO.getSmeta(), saveSmt, authLotDTO);
+                smetaDTOList.add(mapSmetaToSmetaDTO(saveSmt, tenderInfoDTOS, mapSmetaItogToSmetaItogDTO(smetaItog)));
 
             }
             objectDTOList.add(mapObjectToObjectDTO(saveObj, smetaDTOList));
@@ -180,6 +179,97 @@ public class TenderServiceImpl implements TenderService {
 
         return ApiResult.successResponse(new StroyDTO(save.getId(), save.getStrName(), save.getTenderId(),
                 stroyAddDTO.getLotId(), stroyAddDTO.getInn(), objectDTOList));
+    }
+
+    private List<TenderInfoDTO> updateTenderInfoAddDTOList(List<TenderInfoAddDTO> smetaList, Smeta saveSmt, AuthLotDTO authLotDTO) {
+        List<TenderInfoDTO> result = new ArrayList<>();
+
+        for (TenderInfoAddDTO tenderInfoAddDTO : smetaList) {
+            if (Objects.isNull(tenderInfoAddDTO.getSmId()))
+                result.add(saveTenderCustomerWithChild(saveSmt, authLotDTO, tenderInfoAddDTO));
+            else {
+                TenderCustomer customer = tenderCustomerRepository.findBySmIdAndSmeta_Id(tenderInfoAddDTO.getSmId(), saveSmt.getId()).orElseThrow(
+                        () -> RestException.restThrow("Tender more details not found! Maybe TenderCustomer not related to Smeta! id: " + tenderInfoAddDTO.getSmId(), HttpStatus.NOT_FOUND));
+
+                customer.setEdIsm(tenderInfoAddDTO.getEd_ism());
+                customer.setNum(tenderInfoAddDTO.getNum());
+                customer.setRowType(tenderInfoAddDTO.getRowType());
+                customer.setRashod(tenderInfoAddDTO.getRashod());
+                customer.setNorma(tenderInfoAddDTO.getNorma());
+                customer.setSumma(tenderInfoAddDTO.getSumma());
+                customer.setKodSnk(tenderInfoAddDTO.getKod_snk());
+                customer.setPrice(tenderInfoAddDTO.getPrice());
+                customer.setName(tenderInfoAddDTO.getName());
+
+                List<TenderInfoDTO> resArr = null;
+
+                if (tenderInfoAddDTO.getRowType() == 0) {
+                    checkResArrIsEmptyOrNull(tenderInfoAddDTO);
+                    List<TenderInfoDTO> res = new ArrayList<>();
+
+                    for (TenderInfoAddDTO child : tenderInfoAddDTO.getResArray()) {
+                        if (Objects.isNull(child.getSmId())) {
+                            TenderCustomer tenderCustomerChild = tenderCustomerRepository.save(
+                                    mapTenderAddDTOToTenderForChild(child, null, authLotDTO, customer));
+                            res.add(mapTenderToTenderDTO(tenderCustomerChild));
+                        } else {
+                            TenderCustomer childCustomer = tenderCustomerRepository.findBySmIdAndParentId(child.getSmId(), customer.getSmId()).orElseThrow(
+                                    () -> RestException.restThrow(String.format("Tender more details not found with parent! Maybe TenderCustomer not related to Smeta Or Parent! parent_id: %s, sm_id: %s", customer.getSmId(), child.getSmId()), HttpStatus.NOT_FOUND));
+
+                            childCustomer.setEdIsm(tenderInfoAddDTO.getEd_ism());
+                            childCustomer.setNum(tenderInfoAddDTO.getNum());
+                            childCustomer.setRowType(tenderInfoAddDTO.getRowType());
+                            childCustomer.setRashod(tenderInfoAddDTO.getRashod());
+                            childCustomer.setNorma(tenderInfoAddDTO.getNorma());
+                            childCustomer.setSumma(tenderInfoAddDTO.getSumma());
+                            childCustomer.setKodSnk(tenderInfoAddDTO.getKod_snk());
+                            childCustomer.setPrice(tenderInfoAddDTO.getPrice());
+                            childCustomer.setName(tenderInfoAddDTO.getName());
+
+                            TenderCustomer childTenderCustomer = tenderCustomerRepository.save(childCustomer);
+                            res.add(mapTenderToTenderDTO(childTenderCustomer));
+                        }
+                    }
+                    resArr = res;
+                }
+
+                TenderCustomer tenderCustomer = tenderCustomerRepository.save(customer);
+                TenderInfoDTO tenderInfoDTO = mapTenderToTenderDTO(tenderCustomer);
+                tenderInfoDTO.setResArray(resArr);
+
+                result.add(tenderInfoDTO);
+            }
+        }
+
+        return result;
+    }
+
+    private TenderInfoDTO saveTenderCustomerWithChild(Smeta saveSmt, AuthLotDTO authLotDTO, TenderInfoAddDTO tenderInfoAddDTO) {
+        //ROW_TYPE NI TEKSHIRIB TENDER_CUTOMER LARNI SAQLASH
+        if (tenderInfoAddDTO.getRowType() == 0) {
+            checkResArrIsEmptyOrNull(tenderInfoAddDTO);
+
+            List<TenderInfoDTO> resArrList = new ArrayList<>();
+            TenderCustomer tenderCustomer = tenderCustomerRepository.save(
+                    mapTenderAddDTOToTender(tenderInfoAddDTO, saveSmt, authLotDTO));
+
+            for (TenderInfoAddDTO child : tenderInfoAddDTO.getResArray()) {
+                TenderCustomer tenderCustomerChild = tenderCustomerRepository.save(mapTenderAddDTOToTenderForChild(child, null, authLotDTO, tenderCustomer));
+                resArrList.add(mapTenderToTenderDTO(tenderCustomerChild));
+            }
+
+            TenderInfoDTO tenderInfoDTO = mapTenderToTenderDTO(tenderCustomer);
+            tenderInfoDTO.setResArray(resArrList);
+            return tenderInfoDTO;
+        } else {
+            TenderCustomer tenderCustomer = tenderCustomerRepository.save(mapTenderAddDTOToTender(tenderInfoAddDTO, saveSmt, authLotDTO));
+            return mapTenderToTenderDTO(tenderCustomer);
+        }
+    }
+
+    private static void checkResArrIsEmptyOrNull(TenderInfoAddDTO tenderInfoAddDTO) {
+        if (Objects.isNull(tenderInfoAddDTO.getResArray()) || tenderInfoAddDTO.getResArray().isEmpty())
+            throw RestException.restThrow("res_array must not be null or empty!", HttpStatus.BAD_REQUEST);
     }
 
     private StroyDTO saveTenderForOfferor(StroyAddDTO stroyAddDTO, AuthLotDTO authLotDTO) {
@@ -209,8 +299,8 @@ public class TenderServiceImpl implements TenderService {
                 List<TenderInfoDTO> tenderInfoDTOS = new ArrayList<>();
 
                 for (TenderInfoAddDTO tenderInfoAddDTO : smetaAddDTO.getSmeta()) {
-                    if (Objects.isNull(tenderInfoAddDTO.getId()))
-                        throw RestException.restThrow("You should give SmId!");
+                    if (Objects.isNull(tenderInfoAddDTO.getSmId()))
+                        throw RestException.restThrow("You should give SmId!", HttpStatus.BAD_REQUEST);
 
                     TenderOfferor tenderOfferor = tenderOfferorRepository.findBySmIdAndUserIdAndSmeta_Id(tenderInfoAddDTO.getSmId(), authLotDTO.getUserId(), smeta.getId())
                             .orElseThrow(() -> RestException.restThrow("Tender Offeror not found! Maybe TenderOfferor not related to Smeta", HttpStatus.NOT_FOUND));
@@ -219,14 +309,36 @@ public class TenderServiceImpl implements TenderService {
                     tenderOfferor.setSumma(tenderInfoAddDTO.getSumma());
 
                     TenderOfferor save = tenderOfferorRepository.save(tenderOfferor);
-                    tenderInfoDTOS.add(mapTenderToTenderDTO(save));
+                    TenderInfoDTO tenderInfoDTO = mapTenderToTenderDTO(save);
 
+                    if (save.getRowType() == 0) {
+                        checkResArrIsEmptyOrNull(tenderInfoAddDTO);
+                        List<TenderInfoDTO> resArr = new ArrayList<>();
+
+                        for (TenderInfoAddDTO infoAddDTO : tenderInfoAddDTO.getResArray()) {
+                            if (Objects.isNull(infoAddDTO.getSmId()))
+                                throw RestException.restThrow("You should give SmId in res_arr", HttpStatus.BAD_REQUEST);
+
+                            TenderOfferor tenderOfferorChild = tenderOfferorRepository.findBySmIdAndUserId(infoAddDTO.getSmId(), authLotDTO.getUserId())
+                                    .orElseThrow(() -> RestException.restThrow("Tender Offeror not found!", HttpStatus.NOT_FOUND));
+
+                            tenderOfferorChild.setPrice(infoAddDTO.getPrice());
+                            tenderOfferorChild.setSumma(infoAddDTO.getSumma());
+
+                            TenderOfferor childOfferor = tenderOfferorRepository.save(tenderOfferorChild);
+                            resArr.add(mapTenderToTenderDTO(childOfferor));
+                        }
+
+                        tenderInfoDTO.setResArray(resArr);
+                    }
+
+                    tenderInfoDTOS.add(tenderInfoDTO);
                 }
-                smetaDTOList.add(mapSmetaToSmetaDTO(smeta, tenderInfoDTOS));
 
+                smetaDTOList.add(mapSmetaToSmetaDTO(smeta, tenderInfoDTOS, mapSmetaItogToSmetaItogDTO(smeta.getSmetaItog())));
             }
-            objectDTOList.add(mapObjectToObjectDTO(object, smetaDTOList));
 
+            objectDTOList.add(mapObjectToObjectDTO(object, smetaDTOList));
         }
 
         return new StroyDTO(stroy.getId(), stroy.getStrName(), stroy.getTenderId(),
@@ -293,36 +405,50 @@ public class TenderServiceImpl implements TenderService {
 
         for (Object object : stroy.getObArray()) {
             List<SmetaDTO> smetaDTOList = new ArrayList<>();
+            List<Smeta> smetaList = smetaRepository.findAllByObject_Id(object.getId());
 
-            for (Smeta smeta : object.getSmArray()) {
-                List<TenderOfferor> smetaOfferor = smeta.getSmeta_offeror();
+            for (Smeta smeta : smetaList) {
+                List<TenderOfferor> smetaOfferor = tenderOfferorRepository.findAllBySmeta_idAndUserId(smeta.getId(), offerorAuthLotDTO.getUserId());
                 List<TenderInfoDTO> list = new ArrayList<>();
 
                 //AGAR OLDIN OFFEROR YUBORILMAGAN BOLSA
                 if (smetaOfferor.isEmpty()) {
-                    for (TenderCustomer tenderCustomer : smeta.getSmeta_customer()) {
-                        TenderOfferor save = tenderOfferorRepository.save(mapTenderOfferorToTenderCustomer(tenderCustomer, smeta, offerorAuthLotDTO, stroy.getLotId()));
-                        list.add(mapTenderToTenderDTO(save));
+                    List<TenderCustomer> smetaCutomers = tenderCustomerRepository.findAllBySmeta_Id(smeta.getId());
+
+                    for (TenderCustomer tenderCustomer : smetaCutomers) {
+                        TenderOfferor saveOfferor = tenderOfferorRepository.save(
+                                mapTenderOfferorToTenderCustomer(tenderCustomer, smeta, offerorAuthLotDTO, stroy.getLotId()));
+                        TenderInfoDTO tenderInfoDTO = mapTenderToTenderDTO(saveOfferor);
+
+                        if (saveOfferor.getRowType() == 0) {
+                            tenderInfoDTO.setResArray(tenderCustomerRepository.findAllByParentId(tenderCustomer.getSmId()).stream()
+                                    .map(customer -> {
+                                        TenderOfferor saveChild = tenderOfferorRepository.save(
+                                                mapTenderOfferorToTenderCustomer(customer, smeta, offerorAuthLotDTO, stroy.getLotId(), saveOfferor.getSmId()));
+                                        return mapTenderToTenderDTO(saveChild);})
+                                    .toList());
+                        }
+
+                        list.add(tenderInfoDTO);
                     }
                 } else {
                     list = smetaOfferor.stream()
-                            .filter(offeror -> offeror.getUserId() == offerorAuthLotDTO.getUserId())
                             .map(this::mapTenderToTenderDTO)
                             .toList();
                 }
+//
+//                //AGAR LIST BOSH KELSA SHU USER HALI PRICE BILAN SUMMA KIRGIZMAGAN
+//                if (list.isEmpty()) {
+//                    List<TenderInfoDTO> list2 = new ArrayList<>();
+//
+//                    for (TenderCustomer tenderCustomer : smeta.getSmeta_customer()) {
+//                        TenderOfferor save = tenderOfferorRepository.save(mapTenderOfferorToTenderCustomer(tenderCustomer, smeta, offerorAuthLotDTO, stroy.getLotId()));
+//                        list2.add(mapTenderToTenderDTO(save));
+//                    }
+//                    list = list2;
+//                }
 
-                //AGAR LIST BOSH KELSA SHU USER HALI PRICE BILAN SUMMA KIRGIZMAGAN
-                if (list.isEmpty()) {
-                    List<TenderInfoDTO> list2 = new ArrayList<>();
-
-                    for (TenderCustomer tenderCustomer : smeta.getSmeta_customer()) {
-                        TenderOfferor save = tenderOfferorRepository.save(mapTenderOfferorToTenderCustomer(tenderCustomer, smeta, offerorAuthLotDTO, stroy.getLotId()));
-                        list2.add(mapTenderToTenderDTO(save));
-                    }
-                    list = list2;
-                }
-
-                smetaDTOList.add(mapSmetaToSmetaDTO(smeta, list));
+                smetaDTOList.add(mapSmetaToSmetaDTO(smeta, list, mapSmetaItogToSmetaItogDTO(smetaItogRepository.findBySmeta_Id(smeta.getId()).orElseThrow())));
             }
 
             objectDTOList.add(mapObjectToObjectDTO(object, smetaDTOList));
@@ -344,16 +470,21 @@ public class TenderServiceImpl implements TenderService {
             List<SmetaDTO> smetaDTOList = new ArrayList<>();
 
             for (Smeta smeta : object.getSmArray()) {
-                List<TenderCustomer> smetaCustomer = smeta.getSmeta_customer();
+                List<TenderCustomer> smetaCustomers = tenderCustomerRepository.findAllBySmeta_IdAndUserId(smeta.getId(), customerAuthLotDTO.getUserId());
                 List<TenderInfoDTO> list = new ArrayList<>();
 
-                if (!smetaCustomer.isEmpty())
-                    list = smetaCustomer.stream()
-                            .filter(customer -> customer.getUserId() == customerAuthLotDTO.getUserId())
-                            .map(this::mapTenderToTenderDTO)
-                            .toList();
+                for (TenderCustomer smetaCustomer : smetaCustomers) {
+                    TenderInfoDTO tenderInfoDTO = mapTenderToTenderDTO(smetaCustomer);
 
-                smetaDTOList.add(mapSmetaToSmetaDTO(smeta, list));
+                    if (smetaCustomer.getRowType() == 0)
+                        tenderInfoDTO.setResArray(tenderCustomerRepository.findAllByParentId(smetaCustomer.getSmId()).stream()
+                                .map(this::mapTenderToTenderDTO)
+                                .toList());
+
+                    list.add(tenderInfoDTO);
+                }
+
+                smetaDTOList.add(mapSmetaToSmetaDTO(smeta, list, mapSmetaItogToSmetaItogDTO(smeta.getSmetaItog())));
             }
 
             objectDTOList.add(mapObjectToObjectDTO(object, smetaDTOList));
@@ -371,23 +502,43 @@ public class TenderServiceImpl implements TenderService {
                 .kodSnk(tenderCustomer.getKodSnk())
                 .rashod(tenderCustomer.getRashod())
                 .summa(null)
-                .type(tenderCustomer.getType())
+                .rowType(tenderCustomer.getRowType())
                 .edIsm(tenderCustomer.getEdIsm())
-                .id(tenderCustomer.getId())
+                .num(tenderCustomer.getNum())
                 .smeta(smeta)
                 .lotId(lotId)
+                .opred(tenderCustomer.getOpred())
+                .userId(offerorAuthLotDTO.getUserId())
+                .build();
+    }
+
+    private TenderOfferor mapTenderOfferorToTenderCustomer(TenderCustomer tenderCustomer, Smeta smeta, AuthLotDTO offerorAuthLotDTO, long lotId, long parentId) {
+        return TenderOfferor.builder()
+                .norma(tenderCustomer.getNorma())
+                .price(null)
+                .name(tenderCustomer.getName())
+                .kodSnk(tenderCustomer.getKodSnk())
+                .rashod(tenderCustomer.getRashod())
+                .summa(null)
+                .rowType(tenderCustomer.getRowType())
+                .edIsm(tenderCustomer.getEdIsm())
+                .num(tenderCustomer.getNum())
+                .smeta(smeta)
+                .lotId(lotId)
+                .opred(tenderCustomer.getOpred())
+                .parentId(parentId)
                 .userId(offerorAuthLotDTO.getUserId())
                 .build();
     }
 
     private List<TenderInfoDTO> saveTender(Smeta smeta, List<TenderInfoAddDTO> smetaDtoList, AuthLotDTO authLotDTO) {
         if (Objects.isNull(smetaDtoList)) return new ArrayList<>();
+        List<TenderInfoDTO> list = new ArrayList<>();
 
-        return smetaDtoList.stream().map(smetaDto -> {
-            TenderCustomer tenderCustomer = tenderCustomerRepository.save(mapTenderAddDTOToTender(smetaDto, smeta, authLotDTO));
-            return mapTenderToTenderDTO(tenderCustomer);
-        }).toList();
+        for (TenderInfoAddDTO tenderInfoAddDTO : smetaDtoList)
+            list.add(saveTenderCustomerWithChild(smeta, authLotDTO, tenderInfoAddDTO));
 
+        return list;
     }
 
     private AuthLotDTO sendToGetRoleOfLot(Long inn, Long lotId) {
@@ -438,25 +589,27 @@ public class TenderServiceImpl implements TenderService {
         return TenderInfoDTO.builder()
                 .smId(tenderCustomer.getSmId())
                 .ed_ism(tenderCustomer.getEdIsm())
-                .id(tenderCustomer.getId())
+                .num(tenderCustomer.getNum())
                 .kod_snk(tenderCustomer.getKodSnk())
-                .type(tenderCustomer.getType())
+                .rowType(tenderCustomer.getRowType())
                 .price(tenderCustomer.getPrice())
                 .name(tenderCustomer.getName())
                 .norma(tenderCustomer.getNorma())
                 .rashod(tenderCustomer.getRashod())
                 .summa(tenderCustomer.getSumma())
+                .opred(tenderCustomer.getOpred())
                 .userId(tenderCustomer.getUserId())
                 .build();
     }
 
     private TenderInfoDTO mapTenderToTenderDTO(TenderOfferor tender) {
         return TenderInfoDTO.builder()
+                .opred(tender.getOpred())
                 .smId(tender.getSmId())
                 .ed_ism(tender.getEdIsm())
-                .id(tender.getId())
+                .num(tender.getNum())
                 .kod_snk(tender.getKodSnk())
-                .type(tender.getType())
+                .rowType(tender.getRowType())
                 .price(tender.getPrice())
                 .name(tender.getName())
                 .norma(tender.getNorma())
@@ -468,26 +621,81 @@ public class TenderServiceImpl implements TenderService {
 
     private TenderCustomer mapTenderAddDTOToTender(TenderInfoAddDTO tenderInfo, Smeta smeta, AuthLotDTO authLotDTO) {
         return TenderCustomer.builder()
-                .id(tenderInfo.getId())
+                .num(tenderInfo.getNum())
                 .edIsm(tenderInfo.getEd_ism())
                 .kodSnk(tenderInfo.getKod_snk())
-                .type(tenderInfo.getType())
+                .rowType(tenderInfo.getRowType())
                 .price(tenderInfo.getPrice())
                 .name(tenderInfo.getName())
                 .norma(tenderInfo.getNorma())
                 .rashod(tenderInfo.getRashod())
                 .summa(tenderInfo.getSumma())
                 .smeta(smeta)
+                .opred(tenderInfo.getOpred())
                 .userId(authLotDTO.getUserId())
                 .build();
     }
 
-    private SmetaDTO mapSmetaToSmetaDTO(Smeta smeta, List<TenderInfoDTO> tenderInfoDTOS) {
-        return new SmetaDTO(smeta.getId(), smeta.getSmName(), smeta.getSmNum(), tenderInfoDTOS);
+    private TenderCustomer mapTenderAddDTOToTenderForChild(TenderInfoAddDTO tenderInfo, Smeta smeta, AuthLotDTO authLotDTO, TenderCustomer tenderCustomer) {
+        return TenderCustomer.builder()
+                .num(tenderInfo.getNum())
+                .edIsm(tenderInfo.getEd_ism())
+                .kodSnk(tenderInfo.getKod_snk())
+                .rowType(tenderInfo.getRowType())
+                .price(tenderInfo.getPrice())
+                .name(tenderInfo.getName())
+                .opred(tenderInfo.getOpred())
+                .norma(tenderInfo.getNorma())
+                .rashod(tenderInfo.getRashod())
+                .summa(tenderInfo.getSumma())
+                .smeta(smeta)
+                .parentId(tenderCustomer.getSmId())
+                .userId(authLotDTO.getUserId())
+                .build();
+
+    }
+
+    private SmetaDTO mapSmetaToSmetaDTO(Smeta smeta, List<TenderInfoDTO> tenderInfoDTOS, SmetaItogDTO smetaItogDTO) {
+        return new SmetaDTO(smeta.getId(), smeta.getSmName(), smeta.getSmNum(), tenderInfoDTOS, smetaItogDTO);
     }
 
     private ObjectDTO mapObjectToObjectDTO(Object object, List<SmetaDTO> smetaDTOS) {
         return new ObjectDTO(object.getId(), object.getObName(), object.getObNum(), smetaDTOS);
+    }
+
+    private SmetaItogDTO mapSmetaItogToSmetaItogDTO(SmetaItog smetaItog) {
+        return SmetaItogDTO.builder()
+                .itogPr(smetaItog.getItogPr())
+                .itogAll(smetaItog.getItogAll())
+                .zatrTrud(smetaItog.getZatrTrud())
+                .summaZp(smetaItog.getSummaZp())
+                .summaExp(smetaItog.getSummaExp())
+                .summaMat(smetaItog.getSummaMat())
+                .summaObo(smetaItog.getSummaObo())
+                .summaPph(smetaItog.getSummaPph())
+                .summaPzp(smetaItog.getSummaPzp())
+                .summaSso(smetaItog.getSummaSso())
+                .summaKr(smetaItog.getSummaKr())
+                .summaNds(smetaItog.getSummaNds())
+                .build();
+    }
+
+    private SmetaItog mapSmetaItogToSmetaItogAddDTO(SmetaItogAddDTO smetaItog, Smeta saveSmt) {
+        return SmetaItog.builder()
+                .itogPr(smetaItog.getItogPr())
+                .itogAll(smetaItog.getItogAll())
+                .zatrTrud(smetaItog.getZatrTrud())
+                .summaZp(smetaItog.getSummaZp())
+                .summaExp(smetaItog.getSummaExp())
+                .summaMat(smetaItog.getSummaMat())
+                .summaObo(smetaItog.getSummaObo())
+                .summaPph(smetaItog.getSummaPph())
+                .summaPzp(smetaItog.getSummaPzp())
+                .summaSso(smetaItog.getSummaSso())
+                .summaKr(smetaItog.getSummaKr())
+                .summaNds(smetaItog.getSummaNds())
+                .smeta(saveSmt)
+                .build();
     }
 
 }

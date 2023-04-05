@@ -5,11 +5,16 @@ import uz.mc.apptender.modules.Smeta;
 import uz.mc.apptender.modules.TenderOfferor;
 import uz.mc.apptender.modules.enums.RoleEnum;
 
+import java.util.List;
 import java.util.Optional;
 
-public interface TenderOfferorRepository extends JpaRepository<TenderOfferor,Integer> {
+public interface TenderOfferorRepository extends JpaRepository<TenderOfferor,Long> {
 
-    Optional<TenderOfferor> findBySmIdAndUserIdAndSmeta_Id(Integer smId, long userId, Integer smeta_id);
+    Optional<TenderOfferor> findBySmIdAndUserIdAndSmeta_Id(Long smId, long userId, Long smeta_id);
 
     boolean existsByLotId(long lotId);
+
+    List<TenderOfferor> findAllBySmeta_idAndUserId(Long smeta_id, long userId);
+
+    Optional<TenderOfferor> findBySmIdAndUserId(Long smId, long userId);
 }

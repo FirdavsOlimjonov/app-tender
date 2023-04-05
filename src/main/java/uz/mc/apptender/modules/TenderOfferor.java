@@ -22,13 +22,16 @@ import java.math.BigDecimal;
 public class TenderOfferor extends AbsTimestampEntity{
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer smId;
+    private Long smId;
 
     @Column(nullable = false)
-    private Integer id;
+    private Integer num;
 
     @Column(nullable = false)
-    private Integer type;
+    private Integer rowType;
+
+    @Column(nullable = false)
+    private Integer opred;
 
     @Column(nullable = false)
     private long userId;
@@ -54,11 +57,13 @@ public class TenderOfferor extends AbsTimestampEntity{
     @Column(precision=20, scale=5)
     private BigDecimal summa;
 
-    @ManyToOne(optional = false)
+    @ManyToOne
     private Smeta smeta;
 
     private boolean deleted = false;
 
     @Column(nullable = false)
     private long lotId;
+
+    private Long parentId;
 }

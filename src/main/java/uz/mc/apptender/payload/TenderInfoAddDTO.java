@@ -8,20 +8,26 @@ import uz.mc.apptender.utils.MessageConstants;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 import java.math.BigDecimal;
+import java.util.List;
 
 @Getter
 @Setter
 public class TenderInfoAddDTO {
 
     @JsonProperty("SM_ID")
-    private Integer smId;
+    private Long smId;
+
     @NotNull(message = MessageConstants.MUST_NOT_BE_NULL_ID)
-    @JsonProperty("ID")
-    private Integer id;
+    @JsonProperty("NUM")
+    private Integer num;
 
     @NotNull(message = MessageConstants.MUST_NOT_BE_NULL_TYPE)
-    @JsonProperty("TYPE")
-    private Integer type;
+    @JsonProperty("ROW_TYPE")
+    private Integer rowType;
+
+    @NotNull(message = MessageConstants.MUST_NOT_BE_NULL_TYPE)
+    @JsonProperty("OPRED")
+    private Integer opred;
 
     //    @NotNull(message = MessageConstants.MUST_NOT_BE_NULL_KOD_SNK)
 //    @NotBlank(message = MessageConstants.MUST_NOT_BE_BLANK_KOD_SNK)
@@ -52,4 +58,7 @@ public class TenderInfoAddDTO {
     @NotNull(message = MessageConstants.MUST_NOT_BE_NULL_SUMMA)
     @JsonProperty("SUMMA")
     private BigDecimal summa;
+
+    @JsonProperty("res_array")
+    private List<TenderInfoAddDTO> resArray;
 }

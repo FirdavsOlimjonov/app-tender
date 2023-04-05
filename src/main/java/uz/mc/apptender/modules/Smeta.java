@@ -25,28 +25,34 @@ import java.util.List;
 public class Smeta extends AbsTimestampEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id;
+    private Long id;
+
     @Column(nullable = false)
     private String smName;
+
     @Column(nullable = false)
     private String smNum;
-    @Enumerated(EnumType.STRING)
-    private RoleEnum role;
+
     @Column(nullable = false)
     private long userId;
+
+    @OneToOne(mappedBy = "smeta", cascade = CascadeType.ALL)
+    private SmetaItog smetaItog;
+
     @ManyToOne(optional = false)
     private Object object;
+
     private boolean deleted = false;
-    @OneToMany(mappedBy = "smeta",fetch = FetchType.LAZY)
+
+    @OneToMany(mappedBy = "smeta", fetch = FetchType.LAZY)
     private List<TenderCustomer> smeta_customer;
 
-    @OneToMany(mappedBy = "smeta",fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "smeta", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private List<TenderOfferor> smeta_offeror;
 
-    public Smeta(String smName, String smNum, RoleEnum role, long userId, Object object) {
+    public Smeta(String smName, String smNum, long userId, Object object) {
         this.smName = smName;
         this.smNum = smNum;
-        this.role = role;
         this.userId = userId;
         this.object = object;
     }

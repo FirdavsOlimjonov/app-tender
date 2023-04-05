@@ -5,26 +5,32 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.Setter;
 import uz.mc.apptender.modules.enums.RoleEnum;
 import uz.mc.apptender.utils.MessageConstants;
 
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 import java.math.BigDecimal;
+import java.util.List;
 
 @Getter
-//@JsonInclude(JsonInclude.Include.NON_NULL)
+@JsonInclude(JsonInclude.Include.NON_NULL)
 @AllArgsConstructor
+@Setter
 @Builder
 public class TenderInfoDTO {
     @JsonProperty("SM_ID")
-    private Integer smId;
+    private Long smId;
 
-    @JsonProperty("ID")
-    private Integer id;
+    @JsonProperty("NUM")
+    private Integer num;
 
-    @JsonProperty("TYPE")
-    private Integer type;
+    @JsonProperty("ROW_TYPE")
+    private Integer rowType;
+
+    @JsonProperty("OPRED")
+    private Integer opred;
 
     @JsonProperty("USER_ID")
     private Long userId;
@@ -49,4 +55,7 @@ public class TenderInfoDTO {
 
     @JsonProperty("SUMMA")
     private BigDecimal summa;
+
+    @JsonProperty("res_array")
+    private List<TenderInfoDTO> resArray;
 }

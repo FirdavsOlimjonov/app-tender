@@ -15,7 +15,7 @@ import java.util.List;
 @Setter
 @AllArgsConstructor
 public class SmetaDTO {
-    private Integer id;
+    private Long id;
 
     @JsonProperty("sm_name")
     private String smName;
@@ -25,4 +25,7 @@ public class SmetaDTO {
 
     @JsonProperty("smeta")
     private List<TenderInfoDTO> smeta;
+
+    @JsonProperty("smeta_itog")
+    private SmetaItogDTO smetaItog;
 }
