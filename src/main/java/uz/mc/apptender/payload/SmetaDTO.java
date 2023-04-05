@@ -16,10 +16,13 @@ import java.util.List;
 @AllArgsConstructor
 public class SmetaDTO {
     private Integer id;
+
     @JsonProperty("sm_name")
     private String smName;
+
     @JsonProperty("sm_num")
     private String smNum;
+
     @JsonProperty("smeta")
     private List<TenderInfoDTO> smeta;
 }

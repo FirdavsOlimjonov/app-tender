@@ -17,18 +17,12 @@ import java.util.List;
 public class ObjectAddDTO {
     private Integer id;
 
-    @NotBlank(message = MessageConstants.MUST_NOT_BE_BLANK_NAME)
-    @NotNull(message = MessageConstants.MUST_NOT_BE_NULL_NAME)
     @JsonProperty("ob_name")
     private String obName;
 
-    @NotBlank(message = MessageConstants.MUST_NOT_BE_BLANK_NUMBER)
-    @NotNull(message = MessageConstants.MUST_NOT_BE_NULL_NUMBER)
     @JsonProperty("ob_num")
     private String obNum;
 
-    @NotNull(message = MessageConstants.SMETA_ARRAY_NOT_BE_NULL)
-    @NotEmpty(message = MessageConstants.SMETA_ARRAY_NOT_BE_EMPTY)
     @JsonProperty("sm_array")
     private List<SmetaAddDTO> smArray;
 }

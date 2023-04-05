@@ -80,7 +80,7 @@ public class TenderServiceImpl implements TenderService {
 
         logger.info(String.format("Create stroy: lot_id = %s, userId = %s", stroyAddDTO.getLotId(), authLotDTO.getUserId()));
 
-        Stroy saveStroy  = stroyRepository.save(new Stroy(stroyAddDTO.getStrName(), tenderId, stroyAddDTO.getLotId()));
+        Stroy saveStroy = stroyRepository.save(new Stroy(stroyAddDTO.getStrName(), tenderId, stroyAddDTO.getLotId()));
 
         List<ObjectDTO> objectDTOList = new ArrayList<>();
 
@@ -106,8 +106,11 @@ public class TenderServiceImpl implements TenderService {
         if (tenderOfferorRepository.existsByLotId(stroy.getLotId()))
             throw RestException.restThrow("Offeror already created this tender!", HttpStatus.BAD_REQUEST);
 
-        stroy.setStrName(stroyAddDTO.getStrName());
-        Stroy save = stroyRepository.save(stroy);
+        Stroy save;
+        if (!Objects.equals(stroy.getStrName(), stroyAddDTO.getStrName())) {
+            stroy.setStrName(stroyAddDTO.getStrName());
+            save = stroyRepository.save(stroy);
+        }else save = stroy;
 
         List<ObjectDTO> objectDTOList = new ArrayList<>();
 
@@ -118,8 +121,8 @@ public class TenderServiceImpl implements TenderService {
             if (Objects.isNull(objectAddDTO.getId()))
                 saveObj = objectRepository.save(new Object(objectAddDTO.getObName(), objectAddDTO.getObNum(), role, authLotDTO.getUserId(), save));
             else {
-                Object object = objectRepository.findById(objectAddDTO.getId()).orElseThrow(
-                        () -> RestException.restThrow("Object not found !" + objectAddDTO.getId()));
+                Object object = objectRepository.findFirstByIdAndStroy_Id(objectAddDTO.getId(),save.getId()).orElseThrow(
+                        () -> RestException.restThrow("Object not found! Maybe Object not related to Stroy! obj_id:" + objectAddDTO.getId(), HttpStatus.NOT_FOUND));
 
                 object.setObName(objectAddDTO.getObName());
                 object.setRole(role);
@@ -133,8 +136,8 @@ public class TenderServiceImpl implements TenderService {
                 if (Objects.isNull(smetaAddDTO.getId()))
                     saveSmt = smetaRepository.save(new Smeta(smetaAddDTO.getSmName(), smetaAddDTO.getSmNum(), role, authLotDTO.getUserId(), saveObj));
                 else {
-                    Smeta smeta = smetaRepository.findById(smetaAddDTO.getId()).orElseThrow(
-                            () -> RestException.restThrow("Smeta not found !" + smetaAddDTO.getId()));
+                    Smeta smeta = smetaRepository.findFirstByIdAndObject_Id(smetaAddDTO.getId(), saveObj.getId()).orElseThrow(
+                            () -> RestException.restThrow("Smeta not found! Maybe Smeta not related to Object! smeta_id: " + smetaAddDTO.getId(), HttpStatus.NOT_FOUND));
 
                     smeta.setSmName(smetaAddDTO.getSmName());
                     smeta.setSmNum(smetaAddDTO.getSmNum());
@@ -150,8 +153,8 @@ public class TenderServiceImpl implements TenderService {
                         tenderCustomer = tenderCustomerRepository.save(mapTenderAddDTOToTender(tenderInfoAddDTO, saveSmt, authLotDTO));
                     else {
 
-                        TenderCustomer customer = tenderCustomerRepository.findBySmId(tenderInfoAddDTO.getSmId()).orElseThrow(
-                                () -> RestException.restThrow("Tender details not found !" + tenderInfoAddDTO.getSmId()));
+                        TenderCustomer customer = tenderCustomerRepository.findBySmIdAndSmeta_Id(tenderInfoAddDTO.getSmId(), saveSmt.getId()).orElseThrow(
+                                () -> RestException.restThrow("Tender Offeror not found! Maybe TenderOfferor not related to Smeta! id: " + tenderInfoAddDTO.getSmId(), HttpStatus.NOT_FOUND));
 
                         customer.setEdIsm(tenderInfoAddDTO.getEd_ism());
                         customer.setId(tenderInfoAddDTO.getId());
@@ -403,14 +406,14 @@ public class TenderServiceImpl implements TenderService {
             jsonNode = restTemplate.postForObject(uri, requestEntity, JsonNode.class);
         } catch (HttpClientErrorException | HttpServerErrorException e) {
             e.fillInStackTrace();
-            logger.error(e.getMessage()+"  inn: "+inn+", lot_id: "+lotId);
+            logger.error(e.getMessage() + "  inn: " + inn + ", lot_id: " + lotId);
 
             String responseBody = e.getResponseBodyAsString();
             ObjectMapper objectMapper = new ObjectMapper();
             Error error;
 
             try {
-                 error = objectMapper.readValue(responseBody, Error.class);
+                error = objectMapper.readValue(responseBody, Error.class);
             } catch (JsonProcessingException ex) {
                 throw RestException.restThrow(responseBody, HttpStatus.BAD_REQUEST);
             }

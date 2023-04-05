@@ -16,10 +16,13 @@ import java.util.List;
 @AllArgsConstructor
 public class ObjectDTO {
     private Integer id;
+
     @JsonProperty("ob_name")
     private String obName;
+
     @JsonProperty("ob_num")
     private String obNum;
+
     @JsonProperty("sm_array")
     private List<SmetaDTO> smArray;
 }

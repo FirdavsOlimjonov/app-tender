@@ -18,25 +18,35 @@ import java.math.BigDecimal;
 @Builder
 public class TenderInfoDTO {
     @JsonProperty("SM_ID")
-    private int smId;
+    private Integer smId;
+
     @JsonProperty("ID")
-    private int id;
+    private Integer id;
+
     @JsonProperty("TYPE")
-    private int type;
+    private Integer type;
+
     @JsonProperty("USER_ID")
-    private long userId;
+    private Long userId;
+
     @JsonProperty("KOD_SNK")
     private String kod_snk;
+
     @JsonProperty("NAME")
     private String name;
+
     @JsonProperty("ED_ISM")
     private String ed_ism;
+
     @JsonProperty("NORMA")
     private Double norma;
+
     @JsonProperty("RASHOD")
     private Double rashod;
+
     @JsonProperty("PRICE")
     private BigDecimal price;
+
     @JsonProperty("SUMMA")
     private BigDecimal summa;
 }

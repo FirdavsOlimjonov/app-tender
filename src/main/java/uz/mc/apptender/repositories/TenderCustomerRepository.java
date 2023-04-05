@@ -10,4 +10,6 @@ import java.util.Optional;
 public interface TenderCustomerRepository extends JpaRepository<TenderCustomer,Integer> {
 
     Optional<TenderCustomer> findBySmId(Integer smId);
+
+    Optional<TenderCustomer> findBySmIdAndSmeta_Id(Integer smId, Integer smeta_id);
 }
