@@ -39,7 +39,7 @@ public class TenderCustomer extends AbsTimestampEntity{
 //    @Column(nullable = false)
     private String kodSnk;
 
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "text")
     private String name;
 
     @Column(nullable = false)
