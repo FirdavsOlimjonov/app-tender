@@ -39,7 +39,7 @@ public class TenderOfferor extends AbsTimestampEntity{
 //    @Column(nullable = false)
     private String kodSnk;
 
-    @Column(nullable = false, columnDefinition = "text")
+    @Column(nullable = false, columnDefinition = "text", length = 1000)
     private String name;
 
     @Column(nullable = false)

@@ -204,10 +204,14 @@ public class TenderServiceImpl implements TenderService {
                 List<TenderInfoDTO> resArr = null;
 
                 if (tenderInfoAddDTO.getRowType() == 0) {
-                    checkResArrIsEmptyOrNull(tenderInfoAddDTO);
+//                    checkResArrIsEmptyOrNull(tenderInfoAddDTO);
+                    List<TenderInfoAddDTO> resArray = tenderInfoAddDTO.getResArray();
+                    if (Objects.isNull(resArray))
+                        resArray = new ArrayList<>();
+
                     List<TenderInfoDTO> res = new ArrayList<>();
 
-                    for (TenderInfoAddDTO child : tenderInfoAddDTO.getResArray()) {
+                    for (TenderInfoAddDTO child : resArray) {
                         if (Objects.isNull(child.getSmId())) {
                             TenderCustomer tenderCustomerChild = tenderCustomerRepository.save(
                                     mapTenderAddDTOToTenderForChild(child, null, authLotDTO, customer));
@@ -247,13 +251,16 @@ public class TenderServiceImpl implements TenderService {
     private TenderInfoDTO saveTenderCustomerWithChild(Smeta saveSmt, AuthLotDTO authLotDTO, TenderInfoAddDTO tenderInfoAddDTO) {
         //ROW_TYPE NI TEKSHIRIB TENDER_CUTOMER LARNI SAQLASH
         if (tenderInfoAddDTO.getRowType() == 0) {
-            checkResArrIsEmptyOrNull(tenderInfoAddDTO);
+//            checkResArrIsEmptyOrNull(tenderInfoAddDTO);
+            List<TenderInfoAddDTO> resArray = tenderInfoAddDTO.getResArray();
+            if (Objects.isNull(resArray))
+                resArray = new ArrayList<>();
 
             List<TenderInfoDTO> resArrList = new ArrayList<>();
             TenderCustomer tenderCustomer = tenderCustomerRepository.save(
                     mapTenderAddDTOToTender(tenderInfoAddDTO, saveSmt, authLotDTO));
 
-            for (TenderInfoAddDTO child : tenderInfoAddDTO.getResArray()) {
+            for (TenderInfoAddDTO child : resArray) {
                 TenderCustomer tenderCustomerChild = tenderCustomerRepository.save(mapTenderAddDTOToTenderForChild(child, null, authLotDTO, tenderCustomer));
                 resArrList.add(mapTenderToTenderDTO(tenderCustomerChild));
             }
@@ -268,8 +275,10 @@ public class TenderServiceImpl implements TenderService {
     }
 
     private static void checkResArrIsEmptyOrNull(TenderInfoAddDTO tenderInfoAddDTO) {
-        if (Objects.isNull(tenderInfoAddDTO.getResArray()) || tenderInfoAddDTO.getResArray().isEmpty())
+        if (Objects.isNull(tenderInfoAddDTO.getResArray()) || tenderInfoAddDTO.getResArray().isEmpty()){
+            logger.error(tenderInfoAddDTO.toString());
             throw RestException.restThrow("res_array must not be null or empty!", HttpStatus.BAD_REQUEST);
+        }
     }
 
     private StroyDTO saveTenderForOfferor(StroyAddDTO stroyAddDTO, AuthLotDTO authLotDTO) {
@@ -312,10 +321,14 @@ public class TenderServiceImpl implements TenderService {
                     TenderInfoDTO tenderInfoDTO = mapTenderToTenderDTO(save);
 
                     if (save.getRowType() == 0) {
-                        checkResArrIsEmptyOrNull(tenderInfoAddDTO);
+//                        checkResArrIsEmptyOrNull(tenderInfoAddDTO);
+                        List<TenderInfoAddDTO> resArray = tenderInfoAddDTO.getResArray();
+                        if (Objects.isNull(resArray))
+                            resArray = new ArrayList<>();
+
                         List<TenderInfoDTO> resArr = new ArrayList<>();
 
-                        for (TenderInfoAddDTO infoAddDTO : tenderInfoAddDTO.getResArray()) {
+                        for (TenderInfoAddDTO infoAddDTO : resArray) {
                             if (Objects.isNull(infoAddDTO.getSmId()))
                                 throw RestException.restThrow("You should give SmId in res_arr", HttpStatus.BAD_REQUEST);
 

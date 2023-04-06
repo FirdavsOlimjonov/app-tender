@@ -3,6 +3,7 @@ package uz.mc.apptender.payload;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.ToString;
 import uz.mc.apptender.utils.MessageConstants;
 
 import javax.validation.constraints.NotBlank;
@@ -12,6 +13,7 @@ import java.util.List;
 
 @Getter
 @Setter
+@ToString
 public class TenderInfoAddDTO {
 
     @JsonProperty("SM_ID")
