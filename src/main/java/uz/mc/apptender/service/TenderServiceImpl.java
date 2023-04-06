@@ -327,9 +327,10 @@ public class TenderServiceImpl implements TenderService {
                         if (save.getRowType() == 0) {
 //                        checkResArrIsEmptyOrNull(tenderInfoAddDTO);
                             List<TenderInfoAddDTO> resArray = tenderInfoAddDTO.getResArray();
-                            if (Objects.isNull(resArray))
+                            if (Objects.isNull(resArray)) {
+                                resArr = null;
                                 continue;
-
+                            }
                             for (TenderInfoAddDTO infoAddDTO : resArray) {
                                 if (Objects.isNull(infoAddDTO.getSmId()))
                                     throw RestException.restThrow("You should give SmId in res_arr", HttpStatus.BAD_REQUEST);
@@ -346,17 +347,18 @@ public class TenderServiceImpl implements TenderService {
                         }
 
                         tenderInfoDTO.setResArray(resArr);
-                    }
-                    else {
+                    } else {
                         TenderOfferor saveOfferor = tenderOfferorRepository.save(
                                 mapTenderOfferorToTenderInfoAddDTO(tenderInfoAddDTO, smeta, authLotDTO, stroy.getLotId()));
                         tenderInfoDTO = mapTenderToTenderDTO(saveOfferor);
 
                         List<TenderInfoDTO> resArr = new ArrayList<>();
-                        if (saveOfferor.getRowType() == 0){
+                        if (saveOfferor.getRowType() == 0) {
                             List<TenderInfoAddDTO> resArray = tenderInfoAddDTO.getResArray();
-                            if (Objects.isNull(resArray))
-                                resArray = new ArrayList<>();
+                            if (Objects.isNull(resArray)) {
+                                resArr = null;
+                                continue;
+                            }
 
                             for (TenderInfoAddDTO infoAddDTO : resArray) {
                                 TenderOfferor tenderOfferor = mapTenderOfferorToTenderInfoAddDTO(infoAddDTO, smeta, authLotDTO, stroy.getLotId());
