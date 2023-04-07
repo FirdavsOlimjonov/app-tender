@@ -52,6 +52,45 @@ public class TenderServiceImpl implements TenderService {
     private static final Logger logger = LoggerFactory.getLogger(TenderServiceImpl.class);
 
     @Override
+    public ApiResult<?> createTender(CreateTenderDTO createTenderDTO) {
+        URI uri = UriComponentsBuilder.fromUriString(apiUrl).build().toUri();
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.setBasicAuth(username, password);
+
+        //LOT_ID AND INN SEND TO MUHAMMADALI'S SERVER WITH BASIC AUTH
+        logger.info("Send phone number code to get code from Muhammadali's server with inn: " + createTenderDTO.getInn() + " lod_id: " + createTenderDTO.getLotId());
+        HttpEntity<CreateTenderDTO> requestEntity = new HttpEntity<>(createTenderDTO, headers);
+        TempTenderDTO tempTenderDTO;
+
+        try {
+            tempTenderDTO = restTemplate.postForObject(uri, requestEntity, TempTenderDTO.class);
+        } catch (HttpClientErrorException | HttpServerErrorException e) {
+            e.fillInStackTrace();
+            logger.error(e.getMessage() + "  inn: " + createTenderDTO.getInn() + ", lot_id: " + createTenderDTO.getLotId());
+
+            String responseBody = e.getResponseBodyAsString();
+            ObjectMapper objectMapper = new ObjectMapper();
+            Error error;
+
+            try {
+                error = objectMapper.readValue(responseBody, Error.class);
+            } catch (JsonProcessingException ex) {
+                throw RestException.restThrow(responseBody, HttpStatus.BAD_REQUEST);
+            }
+
+            throw RestException.restThrow(error.toString(), HttpStatus.resolve(error.getCode()));
+        }
+
+        // EXTRACT ROLE AND CODE FROM THE RESPONSE DTO OBJECT
+        String role = Objects.requireNonNull(tempTenderDTO).getResult().getData().getRole();
+        String code = tempTenderDTO.getResult().getData().getCode();
+
+        return ApiResult.successResponse(new TenderAuthDTO(createTenderDTO.getLotId(), createTenderDTO.getInn(), role, code));
+    }
+
+    @Override
     @Transactional
     public ApiResult<StroyDTO> add(StroyAddDTO stroyAddDTO) {
         Integer maxTenderId = stroyRepository.findMaxTenderId();
@@ -70,7 +109,7 @@ public class TenderServiceImpl implements TenderService {
 //                throw RestException.restThrow("Offerror cannot added price and summa before published tender!", HttpStatus.BAD_REQUEST);
             return ApiResult.successResponse(saveTenderForOfferor(stroyAddDTO, authLotDTO));
         }
-        //AGAR STROY TOPILSA SHUNGA TEGISHLI HAMMA DETAILSLARNI DELETED TRUE GA OTKIZIB CHIQISH UCHUN
+
         Stroy stroy = stroyRepository.findFirstByLotIdAndDeletedIsFalse(stroyAddDTO.getLotId()).orElse(new Stroy());
 
         //AGAR UPDATE QILISH KERAK BOLSA SHU QISMGA TUSHADI
@@ -79,8 +118,9 @@ public class TenderServiceImpl implements TenderService {
                 throw RestException.restThrow("Smeta already created with this lot_id! You should give unique id for update this smeta details!");
 
             //AGAR TENDER ELONGA CHIQAN BOLSA CUSTOMER UNI UPDATE QILA OLMAYDI
-            if (!authLotDTO.isCustomerCanChange())
-                throw RestException.restThrow("customer cannot update tender details, tender is published!", HttpStatus.BAD_REQUEST);
+            //todo release production this part
+//            if (!authLotDTO.isCustomerCanChange())
+//                throw RestException.restThrow("customer cannot update tender details, tender is published!", HttpStatus.BAD_REQUEST);
 
             logger.info(String.format("Update stroy: lot_id = %s, userId = %s", stroyAddDTO.getLotId(), authLotDTO.getUserId()));
 
@@ -390,45 +430,6 @@ public class TenderServiceImpl implements TenderService {
     }
 
     @Override
-    public ApiResult<?> createTender(CreateTenderDTO createTenderDTO) {
-        URI uri = UriComponentsBuilder.fromUriString(apiUrl).build().toUri();
-
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.setBasicAuth(username, password);
-
-        //LOT_ID AND INN SEND TO MUHAMMADALI'S SERVER WITH BASIC AUTH
-        logger.info("Send phone number code to get code from Muhammadali's server with inn: " + createTenderDTO.getInn() + " lod_id: " + createTenderDTO.getLotId());
-        HttpEntity<CreateTenderDTO> requestEntity = new HttpEntity<>(createTenderDTO, headers);
-        TempTenderDTO tempTenderDTO;
-
-        try {
-            tempTenderDTO = restTemplate.postForObject(uri, requestEntity, TempTenderDTO.class);
-        } catch (HttpClientErrorException | HttpServerErrorException e) {
-            e.fillInStackTrace();
-            logger.error(e.getMessage() + "  inn: " + createTenderDTO.getInn() + ", lot_id: " + createTenderDTO.getLotId());
-
-            String responseBody = e.getResponseBodyAsString();
-            ObjectMapper objectMapper = new ObjectMapper();
-            Error error;
-
-            try {
-                error = objectMapper.readValue(responseBody, Error.class);
-            } catch (JsonProcessingException ex) {
-                throw RestException.restThrow(responseBody, HttpStatus.BAD_REQUEST);
-            }
-
-            throw RestException.restThrow(error.toString(), HttpStatus.resolve(error.getCode()));
-        }
-
-        // EXTRACT ROLE AND CODE FROM THE RESPONSE DTO OBJECT
-        String role = Objects.requireNonNull(tempTenderDTO).getResult().getData().getRole();
-        String code = tempTenderDTO.getResult().getData().getCode();
-
-        return ApiResult.successResponse(new TenderAuthDTO(createTenderDTO.getLotId(), createTenderDTO.getInn(), role, code));
-    }
-
-    @Override
     @Transactional
     public ApiResult<?> getForOfferor(Long innOfferor, Long lotId) {
         AuthLotDTO offerorAuthLotDTO = sendToGetRoleOfLot(innOfferor, lotId);
@@ -444,7 +445,7 @@ public class TenderServiceImpl implements TenderService {
         logger.info(String.format("Get all details for offeror: lot_id = %s, userId = %s", lotId, offerorAuthLotDTO.getUserId()));
 
         List<ObjectDTO> objectDTOList = new ArrayList<>();
-        List<Object> obArray = stroy.getObArray();
+        List<Object> obArray = objectRepository.findAllByStroy_Id(stroy.getId());
 
         for (Object object : obArray) {
             List<SmetaDTO> smetaDTOList = new ArrayList<>();
