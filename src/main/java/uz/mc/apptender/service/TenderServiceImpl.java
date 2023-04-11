@@ -103,7 +103,7 @@ public class TenderServiceImpl implements TenderService {
 
         //AGAR OFFEROR BOLSA UNI FAQAT PRICE VA SUMMA SAQLANADI
         if (role.equals(RoleEnum.OFFEROR)) {
-            //AGAR TENDER ELONGA CHIQMAGAN BO'LSA UNGA O'ZGARTIRISH KIRITA OLMAYDI
+            //AGAR TENDER ELONGA CHIQMAGAN BO'LSA UNGA O'ZGARTIRISH KIRITA OLMAYDI OFFEROR
             //todo release production this part
 //            if (!authLotDTO.isOfferorCanChange())
 //                throw RestException.restThrow("Offerror cannot added price and summa before published tender!", HttpStatus.BAD_REQUEST);
@@ -117,7 +117,7 @@ public class TenderServiceImpl implements TenderService {
             if (Objects.isNull(stroyAddDTO.getId()))
                 throw RestException.restThrow("Smeta already created with this lot_id! You should give unique id for update this smeta details!");
 
-            //AGAR TENDER ELONGA CHIQAN BOLSA CUSTOMER UNI UPDATE QILA OLMAYDI
+            //AGAR TENDER ELONGA CHIQIB STATUS=2 BOLSA CUSTOMER UNI UPDATE QILA OLMAYDI
             //todo release production this part
 //            if (!authLotDTO.isCustomerCanChange())
 //                throw RestException.restThrow("customer cannot update tender details, tender is published!", HttpStatus.BAD_REQUEST);
@@ -602,6 +602,7 @@ public class TenderServiceImpl implements TenderService {
             authLotDTO.setStatus(status);
             authLotDTO.setOfferorCanChange(offerorCanChange);
             authLotDTO.setCustomerCanChange(customerCanChange);
+            authLotDTO.setLotId(lotId);
         }
 
         return authLotDTO;
@@ -670,6 +671,7 @@ public class TenderServiceImpl implements TenderService {
                 .rashod(tenderInfo.getRashod())
                 .summa(tenderInfo.getSumma())
                 .smeta(smeta)
+                .lotId(authLotDTO.getLotId())
                 .opred(tenderInfo.getOpred())
                 .userId(authLotDTO.getUserId())
                 .build();
@@ -688,6 +690,7 @@ public class TenderServiceImpl implements TenderService {
                 .rashod(tenderInfo.getRashod())
                 .summa(tenderInfo.getSumma())
                 .smeta(smeta)
+                .lotId(authLotDTO.getLotId())
                 .parentId(tenderCustomer.getSmId())
                 .userId(authLotDTO.getUserId())
                 .build();

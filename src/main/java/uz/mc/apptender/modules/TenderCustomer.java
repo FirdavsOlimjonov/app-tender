@@ -63,4 +63,7 @@ public class TenderCustomer extends AbsTimestampEntity{
     private boolean deleted = false;
 
     private Long parentId;
+
+    @Column(nullable = false)
+    private long lotId;
 }

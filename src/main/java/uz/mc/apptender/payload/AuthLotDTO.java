@@ -8,6 +8,7 @@ import lombok.Setter;
 public class AuthLotDTO {
     private String role;
     private long userId;
+    private long lotId;
     private int status;
     private boolean customerCanChange;
     private boolean offerorCanChange;
