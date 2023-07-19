@@ -31,4 +31,9 @@ public class StroyAddDTO {
     @NotEmpty(message = MessageConstants.MTB_JSON_NOT_BE_EMPTY)
     @JsonProperty("ob_array")
     private List<ObjectAddDTO> obArray;
+
+    @NotNull(message = MessageConstants.MTB_JSON_NOT_BE_NULL)
+    @NotEmpty(message = MessageConstants.MTB_JSON_NOT_BE_EMPTY)
+    @JsonProperty("svod_resurs")
+    private List<SvodResursDAO> svodResurs;
 }

@@ -28,4 +28,6 @@ public class StroyDTO {
     private long inn;
     @JsonProperty("ob_array")
     private List<ObjectDTO> obArray;
+    @JsonProperty("svod_resurs")
+    private List<SvodResursDAO> svodResurs;
 }

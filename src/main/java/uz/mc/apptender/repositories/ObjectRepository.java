@@ -13,4 +13,6 @@ public interface ObjectRepository extends JpaRepository<Object,Integer> {
     Optional<Object> findFirstByIdAndStroy_Id(Integer id, Integer stroy_id);
 
     List<Object> findAllByStroy_Id(Integer id);
+
+    List<Object> findAllByStroy_LotId(Long id);
 }

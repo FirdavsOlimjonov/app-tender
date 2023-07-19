@@ -1,9 +1,6 @@
 package uz.mc.apptender.modules;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 import org.hibernate.annotations.DynamicInsert;
 import org.hibernate.annotations.DynamicUpdate;
 import org.hibernate.annotations.Where;
@@ -21,6 +18,7 @@ import java.util.List;
 @DynamicInsert
 @DynamicUpdate
 @Where(clause = "deleted = false")
+@ToString
 public class Stroy extends AbsTimestampEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -37,7 +35,12 @@ public class Stroy extends AbsTimestampEntity {
 
     private boolean deleted = false;
     @OneToMany(mappedBy = "stroy",fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    @ToString.Exclude
     private List<Object> obArray;
+
+    @OneToMany(mappedBy = "stroy",fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    @ToString.Exclude
+    private List<SvodResurs> svod_resurs;
 
     public Stroy(String strName, Integer tenderId,  long lotId) {
         this.strName = strName;

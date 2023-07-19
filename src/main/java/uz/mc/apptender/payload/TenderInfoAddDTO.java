@@ -31,8 +31,6 @@ public class TenderInfoAddDTO {
     @JsonProperty("OPRED")
     private Integer opred;
 
-    //    @NotNull(message = MessageConstants.MUST_NOT_BE_NULL_KOD_SNK)
-//    @NotBlank(message = MessageConstants.MUST_NOT_BE_BLANK_KOD_SNK)
     @JsonProperty("KOD_SNK")
     private String kod_snk;
 

@@ -1,25 +1,41 @@
 package uz.mc.apptender.controller;
 
-import org.springframework.web.bind.annotation.*;
+import lombok.RequiredArgsConstructor;
+import org.springframework.web.bind.annotation.RestController;
 import uz.mc.apptender.payload.ApiResult;
 import uz.mc.apptender.payload.CreateTenderDTO;
 import uz.mc.apptender.payload.StroyAddDTO;
 import uz.mc.apptender.payload.StroyDTO;
-import uz.mc.apptender.utils.RestConstants;
+import uz.mc.apptender.service.TenderService;
+import uz.mc.apptender.utils.ExcelGenerate;
 
-import javax.validation.Valid;
+import javax.servlet.http.HttpServletResponse;
 
-@RequestMapping(TenderController.ADDRESS_BASE_PATH)
-public interface TenderController {
+@RestController
+@RequiredArgsConstructor
+public class TenderController implements TenderControllerInterface {
+    private final TenderService tenderService;
+    private final ExcelGenerate excelGenerate;
 
-    String ADDRESS_BASE_PATH = RestConstants.BASE_PATH+"tender";
+    @Override
+    public ApiResult<StroyDTO> add(StroyAddDTO stroyAddDTO) {
+        return tenderService.add(stroyAddDTO);
+    }
 
-    @PostMapping("/add")
-    ApiResult<StroyDTO> add(@RequestBody @Valid StroyAddDTO stroyAddDTO);
+    @Override
+    public ApiResult<?> createTender(CreateTenderDTO createTenderDTO) {
+        return tenderService.createTender(createTenderDTO);
+    }
 
-    @PostMapping("/create")
-    ApiResult<?> createTender(@RequestBody @Valid CreateTenderDTO createTenderDTO);
+    @Override
+    public ApiResult<?> getForOfferor(Long innOfferor, Long lotId) {
+        return tenderService.getForOfferor(innOfferor, lotId);
+    }
 
-    @GetMapping("/get-for-offeror")
-    ApiResult<?> getForOfferor(@RequestParam("inn_offeror") Long innOfferor,@RequestParam("lot_id") Long lotId );
+    @Override
+    public ApiResult<?> generateExcel(Long lotId, HttpServletResponse httpServletResponse) {
+         excelGenerate.generateExcel(lotId, httpServletResponse);
+         return null;
+    }
+
 }

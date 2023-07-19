@@ -39,6 +39,8 @@ public class TenderServiceImpl implements TenderService {
     private final ObjectRepository objectRepository;
     private final SmetaRepository smetaRepository;
     private final SmetaItogRepository smetaItogRepository;
+    private final SvodResourceRepository svodResourceRepository;
+    private final SvodResourceOfferorRepository svodResourceOfferorRepository;
     private final RestTemplate restTemplate = new RestTemplate();
 
     @Value("${app.rest-template.username}")
@@ -52,6 +54,7 @@ public class TenderServiceImpl implements TenderService {
     private static final Logger logger = LoggerFactory.getLogger(TenderServiceImpl.class);
 
     @Override
+    @Transactional
     public ApiResult<?> createTender(CreateTenderDTO createTenderDTO) {
         URI uri = UriComponentsBuilder.fromUriString(apiUrl).build().toUri();
 
@@ -77,7 +80,7 @@ public class TenderServiceImpl implements TenderService {
             try {
                 error = objectMapper.readValue(responseBody, Error.class);
             } catch (JsonProcessingException ex) {
-                throw RestException.restThrow(responseBody, HttpStatus.BAD_REQUEST);
+                throw RestException.restThrow(responseBody);
             }
 
             throw RestException.restThrow(error.toString(), HttpStatus.resolve(error.getCode()));
@@ -102,11 +105,10 @@ public class TenderServiceImpl implements TenderService {
         logger.info(String.format("Request send for get role and auth: role = %s, userId = %s", authLotDTO.getRole(), authLotDTO.getUserId()));
 
         //AGAR OFFEROR BOLSA UNI FAQAT PRICE VA SUMMA SAQLANADI
-        if (role.equals(RoleEnum.OFFEROR)) {
+        if (Objects.equals(role, RoleEnum.OFFEROR)) {
             //AGAR TENDER ELONGA CHIQMAGAN BO'LSA UNGA O'ZGARTIRISH KIRITA OLMAYDI OFFEROR
-            //todo release production this part
-//            if (!authLotDTO.isOfferorCanChange())
-//                throw RestException.restThrow("Offerror cannot added price and summa before published tender!", HttpStatus.BAD_REQUEST);
+            if (!authLotDTO.isOfferorCanChange())
+                throw RestException.restThrow("Offerror cannot added price and summa after published tender!");
             return ApiResult.successResponse(saveTenderForOfferor(stroyAddDTO, authLotDTO));
         }
 
@@ -118,9 +120,8 @@ public class TenderServiceImpl implements TenderService {
                 throw RestException.restThrow("Smeta already created with this lot_id! You should give unique id for update this smeta details!");
 
             //AGAR TENDER ELONGA CHIQIB STATUS=2 BOLSA CUSTOMER UNI UPDATE QILA OLMAYDI
-            //todo release production this part
-//            if (!authLotDTO.isCustomerCanChange())
-//                throw RestException.restThrow("customer cannot update tender details, tender is published!", HttpStatus.BAD_REQUEST);
+            if (!authLotDTO.isCustomerCanChange())
+                throw RestException.restThrow("customer cannot update tender details, tender is published!");
 
             logger.info(String.format("Update stroy: lot_id = %s, userId = %s", stroyAddDTO.getLotId(), authLotDTO.getUserId()));
 
@@ -148,9 +149,19 @@ public class TenderServiceImpl implements TenderService {
             objectDTOList.add(mapObjectToObjectDTO(saveObj, smetaDTOList));
         }
 
+        List<SvodResurs> svodResurs = new ArrayList<>();
+        for (SvodResursDAO svdResource : stroyAddDTO.getSvodResurs()) {
+            svodResurs.add(mapSvodResource(svdResource, saveStroy));
+        }
+
+//        System.out.println("----------------------- " + svodResurs);
+
+        List<SvodResurs> svodResursList = svodResourceRepository.saveAll(svodResurs);
+
         return ApiResult.successResponse(new StroyDTO(saveStroy.getId(), saveStroy.getStrName(), saveStroy.getTenderId(),
-                stroyAddDTO.getLotId(), stroyAddDTO.getInn(), objectDTOList));
+                stroyAddDTO.getLotId(), stroyAddDTO.getInn(), objectDTOList, mapSvodResourceDaoList(svodResursList)));
     }
+
 
     private ApiResult<StroyDTO> updateTenderFromCustomer(AuthLotDTO authLotDTO, Stroy stroy, StroyAddDTO stroyAddDTO) {
         Stroy save;
@@ -221,8 +232,42 @@ public class TenderServiceImpl implements TenderService {
             objectDTOList.add(mapObjectToObjectDTO(saveObj, smetaDTOList));
         }
 
+        ///SVOD_RESURS UNI UPDATE QILISH UCHUN
+        List<SvodResursDAO> svodResursDAOS = updateSvodResurs(stroyAddDTO.getSvodResurs(), save);
+
         return ApiResult.successResponse(new StroyDTO(save.getId(), save.getStrName(), save.getTenderId(),
-                stroyAddDTO.getLotId(), stroyAddDTO.getInn(), objectDTOList));
+                stroyAddDTO.getLotId(), stroyAddDTO.getInn(), objectDTOList, svodResursDAOS));
+    }
+
+    private List<SvodResursDAO> updateSvodResurs(List<SvodResursDAO> svodResurs, Stroy stroy) {
+
+        List<SvodResurs> svodResursList = new ArrayList<>();
+        for (SvodResursDAO svodResur : svodResurs) {
+
+            if (Objects.isNull(svodResur.getId()))
+                svodResursList.add(mapSvodResource(svodResur, stroy));
+            else {
+                SvodResurs resurs = svodResourceRepository.findById(svodResur.getId()).orElseThrow(
+                        () -> RestException.restThrow("Svod Resurs not found!", HttpStatus.NOT_FOUND));
+
+                resurs.setName(svodResur.getName());
+                resurs.setNum(svodResur.getNum());
+                resurs.setKodv(svodResur.getKodv());
+                resurs.setKodr(svodResur.getKodr());
+                resurs.setKodm(svodResur.getKodm());
+                resurs.setKol(svodResur.getKol());
+                resurs.setPrice(svodResur.getPrice());
+                resurs.setStroy(stroy);
+                resurs.setSumma(svodResur.getSumma());
+                resurs.setKodiName(svodResur.getKodiName());
+
+                svodResursList.add(resurs);
+            }
+
+        }
+
+        return mapSvodResourceDaoList(svodResourceRepository.saveAll(svodResursList));
+
     }
 
     private List<TenderInfoDTO> updateTenderInfoAddDTOList(List<TenderInfoAddDTO> smetaList, Smeta saveSmt, AuthLotDTO authLotDTO) {
@@ -248,7 +293,6 @@ public class TenderServiceImpl implements TenderService {
                 List<TenderInfoDTO> resArr = null;
 
                 if (tenderInfoAddDTO.getRowType() == 0) {
-//                    checkResArrIsEmptyOrNull(tenderInfoAddDTO);
                     List<TenderInfoAddDTO> resArray = tenderInfoAddDTO.getResArray();
                     if (Objects.isNull(resArray))
                         continue;
@@ -262,7 +306,8 @@ public class TenderServiceImpl implements TenderService {
                             res.add(mapTenderToTenderDTO(tenderCustomerChild));
                         } else {
                             TenderCustomer childCustomer = tenderCustomerRepository.findBySmIdAndParentId(child.getSmId(), customer.getSmId()).orElseThrow(
-                                    () -> RestException.restThrow(String.format("Tender more details not found with parent! Maybe TenderCustomer not related to Smeta Or Parent! parent_id: %s, sm_id: %s", customer.getSmId(), child.getSmId()), HttpStatus.NOT_FOUND));
+                                    () -> RestException.restThrow(String.format("Tender more details not found with parent! Maybe TenderCustomer not related to Smeta Or Parent! parent_id: %s, sm_id: %s",
+                                            customer.getSmId(), child.getSmId()), HttpStatus.NOT_FOUND));
 
                             childCustomer.setEdIsm(tenderInfoAddDTO.getEd_ism());
                             childCustomer.setNum(tenderInfoAddDTO.getNum());
@@ -293,16 +338,17 @@ public class TenderServiceImpl implements TenderService {
     }
 
     private TenderInfoDTO saveTenderCustomerWithChild(Smeta saveSmt, AuthLotDTO authLotDTO, TenderInfoAddDTO tenderInfoAddDTO) {
+        TenderCustomer tenderCustomer = tenderCustomerRepository.save(
+                mapTenderAddDTOToTender(tenderInfoAddDTO, saveSmt, authLotDTO));
+
         //ROW_TYPE NI TEKSHIRIB TENDER_CUTOMER LARNI SAQLASH
         if (tenderInfoAddDTO.getRowType() == 0) {
-//            checkResArrIsEmptyOrNull(tenderInfoAddDTO);
             List<TenderInfoAddDTO> resArray = tenderInfoAddDTO.getResArray();
             if (Objects.isNull(resArray))
                 return null;
 
             List<TenderInfoDTO> resArrList = new ArrayList<>();
-            TenderCustomer tenderCustomer = tenderCustomerRepository.save(
-                    mapTenderAddDTOToTender(tenderInfoAddDTO, saveSmt, authLotDTO));
+
 
             for (TenderInfoAddDTO child : resArray) {
                 TenderCustomer tenderCustomerChild = tenderCustomerRepository.save(mapTenderAddDTOToTenderForChild(child, null, authLotDTO, tenderCustomer));
@@ -312,18 +358,10 @@ public class TenderServiceImpl implements TenderService {
             TenderInfoDTO tenderInfoDTO = mapTenderToTenderDTO(tenderCustomer);
             tenderInfoDTO.setResArray(resArrList);
             return tenderInfoDTO;
-        } else {
-            TenderCustomer tenderCustomer = tenderCustomerRepository.save(mapTenderAddDTOToTender(tenderInfoAddDTO, saveSmt, authLotDTO));
-            return mapTenderToTenderDTO(tenderCustomer);
         }
-    }
 
-//    private static void checkResArrIsEmptyOrNull(TenderInfoAddDTO tenderInfoAddDTO) {
-//        if (Objects.isNull(tenderInfoAddDTO.getResArray()) || tenderInfoAddDTO.getResArray().isEmpty()) {
-//            logger.error(tenderInfoAddDTO.toString());
-//            throw RestException.restThrow("res_array must not be null or empty!", HttpStatus.BAD_REQUEST);
-//        }
-//    }
+        return mapTenderToTenderDTO(tenderCustomer);
+    }
 
     private StroyDTO saveTenderForOfferor(StroyAddDTO stroyAddDTO, AuthLotDTO authLotDTO) {
         Long lotId = stroyAddDTO.getLotId();
@@ -336,7 +374,7 @@ public class TenderServiceImpl implements TenderService {
 
         for (ObjectAddDTO objectAddDTO : stroyAddDTO.getObArray()) {
             if (Objects.isNull(objectAddDTO.getId()))
-                throw RestException.restThrow("You should give Object Id!", HttpStatus.BAD_REQUEST);
+                throw RestException.restThrow("You should give Object Id!");
 
             Object object = objectRepository.findFirstByIdAndStroy_Id(objectAddDTO.getId(), stroy.getId()).orElseThrow(
                     () -> RestException.restThrow("Object not found! Maybe Object not related to Stroy", HttpStatus.NOT_FOUND));
@@ -345,7 +383,7 @@ public class TenderServiceImpl implements TenderService {
 
             for (SmetaAddDTO smetaAddDTO : objectAddDTO.getSmArray()) {
                 if (Objects.isNull(smetaAddDTO.getId()))
-                    throw RestException.restThrow("You should give Smeta Id!", HttpStatus.BAD_REQUEST);
+                    throw RestException.restThrow("You should give Smeta Id!");
 
                 Smeta smeta = smetaRepository.findFirstByIdAndObject_Id(smetaAddDTO.getId(), object.getId()).orElseThrow(
                         () -> RestException.restThrow("Smeta not found! Maybe Smeta not related to Object", HttpStatus.NOT_FOUND));
@@ -357,7 +395,7 @@ public class TenderServiceImpl implements TenderService {
 
                     if (existsByLotId) {
                         if (Objects.isNull(tenderInfoAddDTO.getSmId()))
-                            throw RestException.restThrow("If you want to update, You should give SmId!", HttpStatus.BAD_REQUEST);
+                            throw RestException.restThrow("If you want to update, You should give SmId!");
 
                         TenderOfferor tenderOfferor = tenderOfferorRepository.findBySmIdAndUserIdAndSmeta_Id(tenderInfoAddDTO.getSmId(), authLotDTO.getUserId(), smeta.getId())
                                 .orElseThrow(() -> RestException.restThrow("Tender Offeror not found! Maybe TenderOfferor not related to Smeta", HttpStatus.NOT_FOUND));
@@ -370,13 +408,12 @@ public class TenderServiceImpl implements TenderService {
                         List<TenderInfoDTO> resArr = new ArrayList<>();
 
                         if (save.getRowType() == 0) {
-//                        checkResArrIsEmptyOrNull(tenderInfoAddDTO);
                             List<TenderInfoAddDTO> resArray = tenderInfoAddDTO.getResArray();
                             if (Objects.isNull(resArray) || resArray.isEmpty()) resArr = null;
                             else {
                                 for (TenderInfoAddDTO infoAddDTO : resArray) {
                                     if (Objects.isNull(infoAddDTO.getSmId()))
-                                        throw RestException.restThrow("You should give SmId in res_arr", HttpStatus.BAD_REQUEST);
+                                        throw RestException.restThrow("You should give SmId in res_arr");
 
                                     TenderOfferor tenderOfferorChild = tenderOfferorRepository.findBySmIdAndUserId(infoAddDTO.getSmId(), authLotDTO.getUserId())
                                             .orElseThrow(() -> RestException.restThrow("Tender Offeror not found!", HttpStatus.NOT_FOUND));
@@ -423,8 +460,30 @@ public class TenderServiceImpl implements TenderService {
             objectDTOList.add(mapObjectToObjectDTO(object, smetaDTOList));
         }
 
+        List<SvodResursOfferor> svodResursOfferors = new ArrayList<>();
+
+        for (SvodResursDAO svodResurs : stroyAddDTO.getSvodResurs()) {
+            if (existsByLotId) {
+                if (Objects.isNull(svodResurs.getId()))
+                    throw RestException.restThrow("If you want to update, You should give svod_res' id!");
+
+                SvodResursOfferor svodResursOfferor = svodResourceOfferorRepository.findById(svodResurs.getId()).orElseThrow(
+                        () -> RestException.restThrow("Svod resours not found!", HttpStatus.NOT_FOUND));
+
+                svodResursOfferor.setPrice(svodResurs.getPrice());
+                svodResursOfferor.setSumma(svodResurs.getSumma());
+
+                svodResursOfferors.add(svodResursOfferor);
+                continue;
+            }
+
+            svodResursOfferors.add(mapSvodResourceOfferor(svodResurs, stroy));
+        }
+
+        List<SvodResursDAO> svodResursDAOList = mapSvodResourceDaoListForOfferor(svodResourceOfferorRepository.saveAll(svodResursOfferors));
+
         return new StroyDTO(stroy.getId(), stroy.getStrName(), stroy.getTenderId(),
-                stroy.getLotId(), stroyAddDTO.getInn(), objectDTOList);
+                stroy.getLotId(), stroyAddDTO.getInn(), objectDTOList, svodResursDAOList);
 
 
     }
@@ -456,7 +515,7 @@ public class TenderServiceImpl implements TenderService {
                 List<TenderInfoDTO> list = new ArrayList<>();
 
                 //AGAR OLDIN OFFEROR YUBORILMAGAN BOLSA
-                if (smetaOfferor.isEmpty()) {
+                if (smetaOfferor == null || smetaOfferor.isEmpty()) {
                     List<TenderCustomer> smetaCutomers = tenderCustomerRepository.findAllBySmeta_Id(smeta.getId());
 
                     for (TenderCustomer tenderCustomer : smetaCutomers) {
@@ -488,9 +547,30 @@ public class TenderServiceImpl implements TenderService {
             objectDTOList.add(mapObjectToObjectDTO(object, smetaDTOList));
         }
 
+        ///SvodResursni dbdan olib kelish
+        List<SvodResursDAO> svodResursDAOSForOfferor = getAllSvodResursForOfferor(stroy);
+
         return ApiResult.successResponse(new StroyDTO(stroy.getId(), stroy.getStrName(), stroy.getTenderId(),
-                stroy.getLotId(), innOfferor, objectDTOList));
+                stroy.getLotId(), innOfferor, objectDTOList, svodResursDAOSForOfferor));
     }
+
+    private List<SvodResursDAO> getAllSvodResursForOfferor(Stroy stroy) {
+        List<SvodResursOfferor> allByStroyForOfferor = svodResourceOfferorRepository.findAllByStroy(stroy);
+        List<SvodResursOfferor> svodResursOfferors = new ArrayList<>();
+
+        //agar oldin yaratilmagan bolsa cutomerdan olib offerorga yozib qaytarish
+        if (allByStroyForOfferor == null || allByStroyForOfferor.isEmpty()){
+            List<SvodResurs> svodResursForCustomer = svodResourceRepository.findAllByStroy(stroy);
+
+            for (SvodResurs resurs : svodResursForCustomer)
+                svodResursOfferors.add(mapSvodResourceOfferorFromCustomer(resurs,stroy));
+
+            return mapSvodResourceDaoListForOfferor(svodResourceOfferorRepository.saveAll(svodResursOfferors));
+        }
+
+        return mapSvodResourceDaoListForOfferor(allByStroyForOfferor);
+    }
+
 
     private ApiResult<?> getForCustomer(AuthLotDTO customerAuthLotDTO, Long lotId, Long innCustomer) {
         Stroy stroy = stroyRepository.findFirstByLotIdAndDeletedIsFalse(lotId).orElseThrow(
@@ -524,8 +604,15 @@ public class TenderServiceImpl implements TenderService {
             objectDTOList.add(mapObjectToObjectDTO(object, smetaDTOList));
         }
 
+        ///SvodResursni dbdan olib kelish
+        List<SvodResursDAO> svodResursForCustomer = getAllSvodResursForCustomer(stroy);
+
         return ApiResult.successResponse(new StroyDTO(stroy.getId(), stroy.getStrName(), stroy.getTenderId(),
-                stroy.getLotId(), innCustomer, objectDTOList));
+                stroy.getLotId(), innCustomer, objectDTOList, svodResursForCustomer));
+    }
+
+    private List<SvodResursDAO> getAllSvodResursForCustomer(Stroy stroy) {
+        return mapSvodResourceDaoList(svodResourceRepository.findAllByStroy(stroy));
     }
 
 
@@ -582,7 +669,7 @@ public class TenderServiceImpl implements TenderService {
             try {
                 error = objectMapper.readValue(responseBody, Error.class);
             } catch (JsonProcessingException ex) {
-                throw RestException.restThrow(responseBody, HttpStatus.BAD_REQUEST);
+                throw RestException.restThrow(responseBody);
             }
 
             throw RestException.restThrow(error.toString(), HttpStatus.resolve(error.getCode()));
@@ -671,8 +758,8 @@ public class TenderServiceImpl implements TenderService {
                 .rashod(tenderInfo.getRashod())
                 .summa(tenderInfo.getSumma())
                 .smeta(smeta)
-                .lotId(authLotDTO.getLotId())
                 .opred(tenderInfo.getOpred())
+                .lotId(authLotDTO.getLotId())
                 .userId(authLotDTO.getUserId())
                 .build();
     }
@@ -738,6 +825,83 @@ public class TenderServiceImpl implements TenderService {
                 .summaNds(smetaItog.getSummaNds())
                 .smeta(saveSmt)
                 .build();
+    }
+
+    private SvodResurs mapSvodResource(SvodResursDAO svdResource, Stroy stroy) {
+        return new SvodResurs(
+                svdResource.getNum(),
+                svdResource.getKodv(),
+                svdResource.getKodr(),
+                svdResource.getKodm(),
+                svdResource.getKodiName(),
+                svdResource.getName(),
+                svdResource.getKol(),
+                svdResource.getPrice(),
+                svdResource.getSumma(),
+                stroy
+        );
+    }
+
+    private SvodResursOfferor mapSvodResourceOfferor(SvodResursDAO svdResource, Stroy stroy) {
+        return new SvodResursOfferor(
+                svdResource.getNum(),
+                svdResource.getKodv(),
+                svdResource.getKodr(),
+                svdResource.getKodm(),
+                svdResource.getKodiName(),
+                svdResource.getName(),
+                svdResource.getKol(),
+                svdResource.getPrice(),
+                svdResource.getSumma(),
+                stroy
+        );
+    }
+
+    private List<SvodResursDAO> mapSvodResourceDaoList(List<SvodResurs> svodResursList) {
+        return svodResursList.stream().map(svodResurs ->
+                new SvodResursDAO(
+                        svodResurs.getId(),
+                        svodResurs.getNum(),
+                        svodResurs.getKodv(),
+                        svodResurs.getKodr(),
+                        svodResurs.getKodm(),
+                        svodResurs.getKodiName(),
+                        svodResurs.getName(),
+                        svodResurs.getKol(),
+                        svodResurs.getPrice(),
+                        svodResurs.getSumma()
+                )).toList();
+    }
+
+    private List<SvodResursDAO> mapSvodResourceDaoListForOfferor(List<SvodResursOfferor> svodResursList) {
+        return svodResursList.stream().map(svodResurs ->
+                new SvodResursDAO(
+                        svodResurs.getId(),
+                        svodResurs.getNum(),
+                        svodResurs.getKodv(),
+                        svodResurs.getKodr(),
+                        svodResurs.getKodm(),
+                        svodResurs.getKodiName(),
+                        svodResurs.getName(),
+                        svodResurs.getKol(),
+                        svodResurs.getPrice(),
+                        svodResurs.getSumma()
+                )).toList();
+    }
+
+    private SvodResursOfferor mapSvodResourceOfferorFromCustomer(SvodResurs svodResursForCustomer, Stroy stroy) {
+        return new SvodResursOfferor(
+                svodResursForCustomer.getNum(),
+                svodResursForCustomer.getKodv(),
+                svodResursForCustomer.getKodr(),
+                svodResursForCustomer.getKodm(),
+                svodResursForCustomer.getKodiName(),
+                svodResursForCustomer.getName(),
+                svodResursForCustomer.getKol(),
+                svodResursForCustomer.getPrice(),
+                svodResursForCustomer.getSumma(),
+                stroy
+        );
     }
 
 }
