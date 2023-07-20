@@ -1,6 +1,8 @@
 package uz.mc.apptender.controller;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.core.io.Resource;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
 import uz.mc.apptender.payload.ApiResult;
 import uz.mc.apptender.payload.CreateTenderDTO;
@@ -33,9 +35,8 @@ public class TenderController implements TenderControllerInterface {
     }
 
     @Override
-    public ApiResult<?> generateExcel(Long lotId, HttpServletResponse httpServletResponse) {
-         excelGenerate.generateExcel(lotId, httpServletResponse);
-         return null;
+    public ResponseEntity<Resource> generateExcel(Long lotId) {
+         return excelGenerate.generateExcel(lotId);
     }
 
 }

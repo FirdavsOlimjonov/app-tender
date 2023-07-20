@@ -12,7 +12,7 @@ public interface SvodResourceRepository extends JpaRepository<SvodResurs, Long> 
     List<SvodResurs> findAllByStroy(Stroy stroy);
 
     @Query(nativeQuery = true, value = """
-            select * from svod_resurs sv where stroy_id = (select id from stroy where lot_id = :lotId);
+            select * from svod_resurs sv where stroy_id = (select id from stroy where lot_id = :lotId) order by num;
             """)
     List<SvodResurs> findAllByStroy_LotId(long lotId);
 }

@@ -6,14 +6,20 @@ import org.apache.poi.hssf.usermodel.HSSFSheet;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.ss.util.CellRangeAddress;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import uz.mc.apptender.modules.SvodResurs;
 import uz.mc.apptender.repositories.SvodResourceRepository;
 
-import javax.servlet.ServletOutputStream;
-import javax.servlet.http.HttpServletResponse;
+import java.io.ByteArrayOutputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 @Component
@@ -22,8 +28,9 @@ public class ExcelGenerate {
 
     private final SvodResourceRepository svodResourceRepository;
 
+    final static DateTimeFormatter CUSTOM_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd-HH-mm-ss");
 
-    public void generateExcel(long lotId, HttpServletResponse httpServletResponse) {
+    public ResponseEntity<Resource> generateExcel(long lotId) {
         List<SvodResurs> svodResursList = svodResourceRepository.findAllByStroy_LotId(lotId);
 
         HSSFWorkbook workbook = new HSSFWorkbook();
@@ -33,28 +40,9 @@ public class ExcelGenerate {
         CellStyle styleBasic = getStyleBasic(workbook);
 
         //Header qismdagi static qismlarni yozish
-        int dataIndex = setHeaderByDefault(sheet, style);
-
+        int dataIndex = setHeaderByDefault(sheet, style,styleBasic);
 
         for (SvodResurs resurs : svodResursList) {
-//            CellRangeAddress cellAddressesObject = new CellRangeAddress(dataIndex, dataIndex, 0, 7);
-//            sheet.addMergedRegion(cellAddressesObject);
-
-//            HSSFRow rowObject = sheet.createRow(dataIndex++);
-//            rowObject.createCell(0).setCellValue(resurs.getObName());
-//            for (Cell cell : rowObject)
-//                cell.setCellStyle(style);
-//
-//            sheet.createRow(dataIndex++);
-//
-//            CellRangeAddress cellAddressesSmeta = new CellRangeAddress(dataIndex, dataIndex, 0, 7);
-//            sheet.addMergedRegion(cellAddressesSmeta);
-
-//            HSSFRow rowSmeta = sheet.createRow(dataIndex++);
-//            rowSmeta.createCell(0).setCellValue(smeta.getSmName());
-//            for (Cell cell : rowSmeta)
-//                cell.setCellStyle(style);
-
             HSSFRow row = sheet.createRow(dataIndex++);
 
             row.createCell(0).setCellValue(resurs.getNum());
@@ -70,7 +58,6 @@ public class ExcelGenerate {
         }
 
         sheet.autoSizeColumn(0);
-//        sheet.autoSizeColumn(1);
         sheet.setDefaultColumnWidth(130);
         sheet.autoSizeColumn(2);
         sheet.autoSizeColumn(3);
@@ -78,20 +65,41 @@ public class ExcelGenerate {
         sheet.autoSizeColumn(5);
 
         try {
-            ServletOutputStream outputStream = httpServletResponse.getOutputStream();
-            FileOutputStream fileOut = new FileOutputStream("test.xls");
-            workbook.write(fileOut);
-            workbook.write(outputStream);
+            ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+            HttpHeaders headers = new HttpHeaders();
+
+            LocalDateTime ldt = LocalDateTime.now();
+            String formattedString = ldt.format(CUSTOM_FORMATTER).concat(".xls");
+
+            workbook.write(byteArrayOutputStream);
             workbook.close();
+
+//            httpServletResponse.setContentType("application/vnd.ms-excel");
+//            httpServletResponse.setHeader("Content-Disposition", "attachment; filename=" + formattedString);
+
+            byte[] bytes = byteArrayOutputStream.toByteArray();
+            ByteArrayResource resource = new ByteArrayResource(bytes);
+
+            headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
+            headers.setContentDispositionFormData(formattedString, formattedString);
+
+            FileOutputStream fileOut = new FileOutputStream(formattedString);
+            workbook.write(fileOut);
             fileOut.close();
-            outputStream.close();
+
+            return ResponseEntity.ok()
+                    .headers(headers)
+                    .contentLength(bytes.length)
+                    .body(resource);
+
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            e.printStackTrace();
+            return ResponseEntity.status(500).build();
         }
 
     }
 
-    private static int setHeaderByDefault(HSSFSheet sheet, CellStyle style) {
+    private static int setHeaderByDefault(HSSFSheet sheet, CellStyle style, CellStyle styleBasic) {
         CellRangeAddress first = new CellRangeAddress(0, 1, 0, 0);
         CellRangeAddress second = new CellRangeAddress(0, 1, 1, 1);
         CellRangeAddress third = new CellRangeAddress(0, 1, 2, 2);
@@ -117,7 +125,7 @@ public class ExcelGenerate {
 
         HSSFRow row1 = sheet.createRow(1);
         for (Cell cell : row1)
-            cell.setCellStyle(style);
+            cell.setCellStyle(styleBasic);
 
         HSSFRow sheetRow = sheet.createRow(1);
         sheetRow.createCell(4).setCellValue("ЕДИНИЦЫ");
@@ -155,6 +163,8 @@ public class ExcelGenerate {
 
     private static CellStyle getCellStyle(HSSFWorkbook workbook) {
         CellStyle style = getStyleBasic(workbook);
+        style.setAlignment(HorizontalAlignment.CENTER);
+        style.setVerticalAlignment(VerticalAlignment.CENTER);
 
         Font font = workbook.createFont();
         font.setBold(true);

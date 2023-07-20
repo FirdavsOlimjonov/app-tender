@@ -1,5 +1,7 @@
 package uz.mc.apptender.controller;
 
+import org.springframework.core.io.Resource;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import uz.mc.apptender.payload.ApiResult;
 import uz.mc.apptender.payload.CreateTenderDTO;
@@ -25,5 +27,5 @@ public interface TenderControllerInterface {
     ApiResult<?> getForOfferor(@RequestParam("inn") Long innOfferor,@RequestParam("lot_id") Long lotId );
 
     @GetMapping("/{lotId}")
-    ApiResult<?> generateExcel(@PathVariable Long lotId, HttpServletResponse httpServletResponse);
+    ResponseEntity<Resource> generateExcel(@PathVariable Long lotId);
 }
