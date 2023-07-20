@@ -24,6 +24,6 @@ public interface TenderControllerInterface {
     @GetMapping("/get")
     ApiResult<?> getForOfferor(@RequestParam("inn") Long innOfferor,@RequestParam("lot_id") Long lotId );
 
-//    @GetMapping("/{lotId}")
+    @GetMapping("/{lotId}")
     ApiResult<?> generateExcel(@PathVariable Long lotId, HttpServletResponse httpServletResponse);
 }

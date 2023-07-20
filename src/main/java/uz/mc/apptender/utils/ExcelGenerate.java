@@ -7,10 +7,8 @@ import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.ss.util.CellRangeAddress;
 import org.springframework.stereotype.Component;
-import uz.mc.apptender.modules.Object;
-import uz.mc.apptender.modules.Smeta;
-import uz.mc.apptender.payload.projections.TenderProjection;
-import uz.mc.apptender.repositories.*;
+import uz.mc.apptender.modules.SvodResurs;
+import uz.mc.apptender.repositories.SvodResourceRepository;
 
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletResponse;
@@ -22,15 +20,11 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ExcelGenerate {
 
-    private final StroyRepository stroyRepository;
-    private final ObjectRepository objectRepository;
-    private final SmetaRepository smetaRepository;
-    private final SmetaItogRepository smetaItogRepository;
-    private final TenderCustomerRepository tenderCustomerRepository;
+    private final SvodResourceRepository svodResourceRepository;
 
 
     public void generateExcel(long lotId, HttpServletResponse httpServletResponse) {
-        List<Object> objectList = findAllObject(lotId);
+        List<SvodResurs> svodResursList = svodResourceRepository.findAllByStroy_LotId(lotId);
 
         HSSFWorkbook workbook = new HSSFWorkbook();
         HSSFSheet sheet = workbook.createSheet("Xisobot");
@@ -41,49 +35,47 @@ public class ExcelGenerate {
         //Header qismdagi static qismlarni yozish
         int dataIndex = setHeaderByDefault(sheet, style);
 
-        for (Object object : objectList) {
-            CellRangeAddress cellAddressesObject = new CellRangeAddress(dataIndex, dataIndex, 0, 7);
-            sheet.addMergedRegion(cellAddressesObject);
 
-            HSSFRow rowObject = sheet.createRow(dataIndex++);
-            rowObject.createCell(0).setCellValue(object.getObName());
-            for (Cell cell : rowObject)
-                cell.setCellStyle(style);
+        for (SvodResurs resurs : svodResursList) {
+//            CellRangeAddress cellAddressesObject = new CellRangeAddress(dataIndex, dataIndex, 0, 7);
+//            sheet.addMergedRegion(cellAddressesObject);
 
-            sheet.createRow(dataIndex++);
+//            HSSFRow rowObject = sheet.createRow(dataIndex++);
+//            rowObject.createCell(0).setCellValue(resurs.getObName());
+//            for (Cell cell : rowObject)
+//                cell.setCellStyle(style);
+//
+//            sheet.createRow(dataIndex++);
+//
+//            CellRangeAddress cellAddressesSmeta = new CellRangeAddress(dataIndex, dataIndex, 0, 7);
+//            sheet.addMergedRegion(cellAddressesSmeta);
 
-            for (Smeta smeta : object.getSmArray()) {
-                CellRangeAddress cellAddressesSmeta = new CellRangeAddress(dataIndex, dataIndex, 0, 7);
-                sheet.addMergedRegion(cellAddressesSmeta);
+//            HSSFRow rowSmeta = sheet.createRow(dataIndex++);
+//            rowSmeta.createCell(0).setCellValue(smeta.getSmName());
+//            for (Cell cell : rowSmeta)
+//                cell.setCellStyle(style);
 
-                HSSFRow rowSmeta = sheet.createRow(dataIndex++);
-                rowSmeta.createCell(0).setCellValue(smeta.getSmName());
-                for (Cell cell : rowSmeta)
-                    cell.setCellStyle(style);
+            HSSFRow row = sheet.createRow(dataIndex++);
 
-                sheet.createRow(dataIndex++);
+            row.createCell(0).setCellValue(resurs.getNum());
+            row.createCell(1).setCellValue(resurs.getName());
+            row.createCell(2).setCellValue(resurs.getKodiName());
+            row.createCell(3).setCellValue(resurs.getKol());
+            row.createCell(4).setCellValue(resurs.getPrice().doubleValue());
+            row.createCell(5).setCellValue(resurs.getSumma().doubleValue());
 
-                int num = 1;
-                for (TenderProjection tenderCustomer : tenderCustomerRepository.findAllBySmeta_IdWithQuery(smeta.getId())) {
-                    HSSFRow rowTender = sheet.createRow(dataIndex++);
+            for (Cell cell : row)
+                cell.setCellStyle(styleBasic);
 
-                    rowTender.createCell(0).setCellValue(num++);
-                    rowTender.createCell(1).setCellValue("  ");
-                    rowTender.createCell(2).setCellValue(tenderCustomer.getKod_snk());
-                    rowTender.createCell(3).setCellValue(tenderCustomer.getName());
-                    rowTender.createCell(4).setCellValue(tenderCustomer.getEd_ism());
-                    rowTender.createCell(5).setCellValue(tenderCustomer.getNorma());
-                    rowTender.createCell(6).setCellValue(tenderCustomer.getPrice().doubleValue());
-                    rowTender.createCell(7).setCellValue(tenderCustomer.getSumma().doubleValue());
-
-                    for (Cell cell : rowTender)
-                        cell.setCellStyle(styleBasic);
-
-                }
-                sheet.createRow(dataIndex++);
-
-            }
         }
+
+        sheet.autoSizeColumn(0);
+//        sheet.autoSizeColumn(1);
+        sheet.setDefaultColumnWidth(130);
+        sheet.autoSizeColumn(2);
+        sheet.autoSizeColumn(3);
+        sheet.autoSizeColumn(4);
+        sheet.autoSizeColumn(5);
 
         try {
             ServletOutputStream outputStream = httpServletResponse.getOutputStream();
@@ -100,44 +92,57 @@ public class ExcelGenerate {
     }
 
     private static int setHeaderByDefault(HSSFSheet sheet, CellStyle style) {
+        CellRangeAddress first = new CellRangeAddress(0, 1, 0, 0);
+        CellRangeAddress second = new CellRangeAddress(0, 1, 1, 1);
+        CellRangeAddress third = new CellRangeAddress(0, 1, 2, 2);
+        CellRangeAddress fourth= new CellRangeAddress(0, 1, 3, 3);
+        CellRangeAddress five= new CellRangeAddress(0, 0, 4, 5);
+
+        sheet.addMergedRegion(first);
+        sheet.addMergedRegion(second);
+        sheet.addMergedRegion(third);
+        sheet.addMergedRegion(fourth);
+        sheet.addMergedRegion(five);
+
         HSSFRow row = sheet.createRow(0);
 
         row.createCell(0).setCellValue("N%");
-        row.createCell(1).setCellValue("РЕСУРС");
-        row.createCell(2).setCellValue("ОБОСНОВАНИЕ");
-        row.createCell(3).setCellValue("НАИМЕНОВАНИЕ РЕСУРСА");
-        row.createCell(4).setCellValue("ЕД.ИЗМ");
-        row.createCell(5).setCellValue("КОЛ-ВО");
-        row.createCell(6).setCellValue("ЦЕНА");
-        row.createCell(7).setCellValue("СУММА");
+        row.createCell(1).setCellValue("НАИМЕНОВАНИЕ РЕСУРСА");
+        row.createCell(2).setCellValue("ЕД.ИЗМ");
+        row.createCell(3).setCellValue("КОЛ-ВО");
+        row.createCell(4).setCellValue("СТОИМОСТЬ В ТЕКУЩИХ ЦЕНАХ");
 
         for (Cell cell : row)
             cell.setCellStyle(style);
 
-        HSSFRow rowIndexOne = sheet.createRow(1);
+        HSSFRow row1 = sheet.createRow(1);
+        for (Cell cell : row1)
+            cell.setCellStyle(style);
+
+        HSSFRow sheetRow = sheet.createRow(1);
+        sheetRow.createCell(4).setCellValue("ЕДИНИЦЫ");
+        sheetRow.createCell(5).setCellValue("НА ВЕСЬ ОБЪЕМ");
+
+        for (Cell cell : sheetRow)
+            cell.setCellStyle(style);
+
+        HSSFRow rowIndexOne = sheet.createRow(2);
         rowIndexOne.createCell(0).setCellValue(1);
         rowIndexOne.createCell(1).setCellValue(2);
         rowIndexOne.createCell(2).setCellValue(3);
         rowIndexOne.createCell(3).setCellValue(4);
         rowIndexOne.createCell(4).setCellValue(5);
         rowIndexOne.createCell(5).setCellValue(6);
-        rowIndexOne.createCell(6).setCellValue(7);
-        rowIndexOne.createCell(7).setCellValue(8);
 
         for (Cell cell : rowIndexOne)
             cell.setCellStyle(style);
 
-        return 2;
+        return 4;
     }
-
-    private List<Object> findAllObject(long lotId) {
-        return objectRepository.findAllByStroy_LotId(lotId);
-    }
-
 
     private static CellStyle getStyleBasic(HSSFWorkbook workbook) {
         CellStyle styleBasic = workbook.createCellStyle();
-        styleBasic.setAlignment(HorizontalAlignment.CENTER);
+        styleBasic.setAlignment(HorizontalAlignment.LEFT);
         styleBasic.setVerticalAlignment(VerticalAlignment.CENTER);
 
         // set border styleBasic of the cell
