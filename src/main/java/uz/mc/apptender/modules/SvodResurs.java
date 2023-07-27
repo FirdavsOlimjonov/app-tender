@@ -24,6 +24,8 @@ public class SvodResurs extends AbsLongEntity {
 
     private Integer kodv;
 
+    private Integer tip;
+
     private String kodr;
 
     private String kodm;

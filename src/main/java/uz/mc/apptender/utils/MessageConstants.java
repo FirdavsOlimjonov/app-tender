@@ -36,4 +36,5 @@ public interface MessageConstants {
     String MUST_NOT_BE_NULL_KODV = "MUST_NOT_BE_NULL_KODV";
     String MUST_NOT_BE_BLANK_KODR = "MUST_NOT_BE_BLANK_KODR";
     String MUST_NOT_BE_BLANK_KODM = "MUST_NOT_BE_BLANK_KODM";
+    String MUST_NOT_BE_NULL_TIN = "MUST_NOT_BE_NULL_TIN";
 }

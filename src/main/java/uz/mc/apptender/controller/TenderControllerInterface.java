@@ -12,7 +12,7 @@ import uz.mc.apptender.utils.RestConstants;
 import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
 
-@RequestMapping(TenderController.ADDRESS_BASE_PATH)
+@RequestMapping(TenderControllerInterface.ADDRESS_BASE_PATH)
 public interface TenderControllerInterface {
 
     String ADDRESS_BASE_PATH = RestConstants.BASE_PATH+"tender";

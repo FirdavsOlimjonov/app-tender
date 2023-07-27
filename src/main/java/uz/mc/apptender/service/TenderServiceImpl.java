@@ -162,7 +162,6 @@ public class TenderServiceImpl implements TenderService {
                 stroyAddDTO.getLotId(), stroyAddDTO.getInn(), objectDTOList, mapSvodResourceDaoList(svodResursList)));
     }
 
-
     private ApiResult<StroyDTO> updateTenderFromCustomer(AuthLotDTO authLotDTO, Stroy stroy, StroyAddDTO stroyAddDTO) {
         Stroy save;
         if (!Objects.equals(stroy.getStrName(), stroyAddDTO.getStrName())) {
@@ -568,9 +567,8 @@ public class TenderServiceImpl implements TenderService {
             return mapSvodResourceDaoListForOfferor(svodResourceOfferorRepository.saveAll(svodResursOfferors));
         }
 
-        return mapSvodResourceDaoListForOfferor(allByStroyForOfferor);
+        return mapSvodResourceDaoListForOfferorPriceNull(allByStroyForOfferor);
     }
-
 
     private ApiResult<?> getForCustomer(AuthLotDTO customerAuthLotDTO, Long lotId, Long innCustomer) {
         Stroy stroy = stroyRepository.findFirstByLotIdAndDeletedIsFalse(lotId).orElseThrow(
@@ -614,7 +612,6 @@ public class TenderServiceImpl implements TenderService {
     private List<SvodResursDAO> getAllSvodResursForCustomer(Stroy stroy) {
         return mapSvodResourceDaoList(svodResourceRepository.findAllByStroy(stroy));
     }
-
 
     private TenderOfferor mapTenderOfferorToTenderInfoAddDTO(TenderInfoAddDTO tenderInfoAddDTO, Smeta smeta, AuthLotDTO offerorAuthLotDTO, long lotId) {
         return TenderOfferor.builder()
@@ -831,6 +828,7 @@ public class TenderServiceImpl implements TenderService {
         return new SvodResurs(
                 svdResource.getNum(),
                 svdResource.getKodv(),
+                svdResource.getTip(),
                 svdResource.getKodr(),
                 svdResource.getKodm(),
                 svdResource.getKodiName(),
@@ -846,6 +844,7 @@ public class TenderServiceImpl implements TenderService {
         return new SvodResursOfferor(
                 svdResource.getNum(),
                 svdResource.getKodv(),
+                svdResource.getTip(),
                 svdResource.getKodr(),
                 svdResource.getKodm(),
                 svdResource.getKodiName(),
@@ -863,6 +862,7 @@ public class TenderServiceImpl implements TenderService {
                         svodResurs.getId(),
                         svodResurs.getNum(),
                         svodResurs.getKodv(),
+                        svodResurs.getTip(),
                         svodResurs.getKodr(),
                         svodResurs.getKodm(),
                         svodResurs.getKodiName(),
@@ -879,6 +879,7 @@ public class TenderServiceImpl implements TenderService {
                         svodResurs.getId(),
                         svodResurs.getNum(),
                         svodResurs.getKodv(),
+                        svodResurs.getTip(),
                         svodResurs.getKodr(),
                         svodResurs.getKodm(),
                         svodResurs.getKodiName(),
@@ -889,10 +890,28 @@ public class TenderServiceImpl implements TenderService {
                 )).toList();
     }
 
+    private List<SvodResursDAO> mapSvodResourceDaoListForOfferorPriceNull(List<SvodResursOfferor> svodResursList) {
+        return svodResursList.stream().map(svodResurs ->
+                new SvodResursDAO(
+                        svodResurs.getId(),
+                        svodResurs.getNum(),
+                        svodResurs.getKodv(),
+                        svodResurs.getTip(),
+                        svodResurs.getKodr(),
+                        svodResurs.getKodm(),
+                        svodResurs.getKodiName(),
+                        svodResurs.getName(),
+                        svodResurs.getKol(),
+                        null,
+                        null
+                )).toList();
+    }
+
     private SvodResursOfferor mapSvodResourceOfferorFromCustomer(SvodResurs svodResursForCustomer, Stroy stroy) {
         return new SvodResursOfferor(
                 svodResursForCustomer.getNum(),
                 svodResursForCustomer.getKodv(),
+                svodResursForCustomer.getTip(),
                 svodResursForCustomer.getKodr(),
                 svodResursForCustomer.getKodm(),
                 svodResursForCustomer.getKodiName(),

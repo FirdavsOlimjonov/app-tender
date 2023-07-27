@@ -33,4 +33,10 @@ public interface TenderCustomerRepository extends JpaRepository<TenderCustomer,L
     List<TenderProjection> findAllBySmeta_IdWithQuery(Long smeta_id);
 
     List<TenderCustomer> findAllByParentId(Long parentId);
+
+    @Query(nativeQuery = true, value = """
+            select coalesce(sum(rashod), 0) from tender_customer
+            where lot_id = :lot_id and kod_snk = :kodr ;
+            """)
+    double sumRashod(Long lot_id, String kodr);
 }
