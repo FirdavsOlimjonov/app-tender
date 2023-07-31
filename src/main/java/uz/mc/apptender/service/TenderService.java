@@ -11,5 +11,5 @@ public interface TenderService {
 
     ApiResult<?> createTender(CreateTenderDTO createTenderDTO);
 
-    ApiResult<?> getForOfferor(Long innOfferor,Long lotId);
+    ApiResult<?> getSmeta(Long innOfferor,Long lotId);
 }

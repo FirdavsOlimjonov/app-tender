@@ -1,7 +1,6 @@
 package uz.mc.apptender.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -24,6 +23,7 @@ import uz.mc.apptender.modules.enums.RoleEnum;
 import uz.mc.apptender.payload.Error;
 import uz.mc.apptender.payload.*;
 import uz.mc.apptender.repositories.*;
+import uz.mc.apptender.utils.Utils;
 
 import java.net.URI;
 import java.util.ArrayList;
@@ -41,6 +41,7 @@ public class TenderServiceImpl implements TenderService {
     private final SmetaItogRepository smetaItogRepository;
     private final SvodResourceRepository svodResourceRepository;
     private final SvodResourceOfferorRepository svodResourceOfferorRepository;
+    private final Utils utils;
     private final RestTemplate restTemplate = new RestTemplate();
 
     @Value("${app.rest-template.username}")
@@ -49,8 +50,7 @@ public class TenderServiceImpl implements TenderService {
     private String password;
     @Value("${app.rest-template.url-send-sms}")
     private String apiUrl;
-    @Value("${app.rest-template.url-get-role}")
-    private String apiUrlToRole;
+
     private static final Logger logger = LoggerFactory.getLogger(TenderServiceImpl.class);
 
     @Override
@@ -99,17 +99,18 @@ public class TenderServiceImpl implements TenderService {
         Integer maxTenderId = stroyRepository.findMaxTenderId();
         Integer tenderId = Objects.isNull(maxTenderId) ? 1 : maxTenderId + 1;
 
-        AuthLotDTO authLotDTO = sendToGetRoleOfLot(stroyAddDTO.getInn(), stroyAddDTO.getLotId());
+        AuthLotDTO authLotDTO = utils.sendToGetRoleOfLot(stroyAddDTO.getInn(), stroyAddDTO.getLotId());
         RoleEnum role = authLotDTO.getRole().toUpperCase().equals(RoleEnum.CUSTOMER.name()) ? RoleEnum.CUSTOMER : RoleEnum.OFFEROR;
 
         logger.info(String.format("Request send for get role and auth: role = %s, userId = %s", authLotDTO.getRole(), authLotDTO.getUserId()));
 
         //AGAR OFFEROR BOLSA UNI FAQAT PRICE VA SUMMA SAQLANADI
         if (Objects.equals(role, RoleEnum.OFFEROR)) {
-            //AGAR TENDER ELONGA CHIQMAGAN BO'LSA UNGA O'ZGARTIRISH KIRITA OLMAYDI OFFEROR
-            if (!authLotDTO.isOfferorCanChange())
-                throw RestException.restThrow("Offerror cannot added price and summa after published tender!");
-            return ApiResult.successResponse(saveTenderForOfferor(stroyAddDTO, authLotDTO));
+            throw RestException.restThrow("Offeror cannot add smeta!");
+//            //AGAR TENDER ELONGA CHIQMAGAN BO'LSA UNGA O'ZGARTIRISH KIRITA OLMAYDI OFFEROR
+//            if (!authLotDTO.isOfferorCanChange())
+//                throw RestException.restThrow("Offerror cannot added price and summa after published tender!");
+//            return ApiResult.successResponse(saveTenderForOfferor(stroyAddDTO, authLotDTO));
         }
 
         Stroy stroy = stroyRepository.findFirstByLotIdAndDeletedIsFalse(stroyAddDTO.getLotId()).orElse(new Stroy());
@@ -153,8 +154,6 @@ public class TenderServiceImpl implements TenderService {
         for (SvodResursDAO svdResource : stroyAddDTO.getSvodResurs()) {
             svodResurs.add(mapSvodResource(svdResource, saveStroy));
         }
-
-//        System.out.println("----------------------- " + svodResurs);
 
         List<SvodResurs> svodResursList = svodResourceRepository.saveAll(svodResurs);
 
@@ -489,13 +488,17 @@ public class TenderServiceImpl implements TenderService {
 
     @Override
     @Transactional
-    public ApiResult<?> getForOfferor(Long innOfferor, Long lotId) {
-        AuthLotDTO offerorAuthLotDTO = sendToGetRoleOfLot(innOfferor, lotId);
+    public ApiResult<?> getSmeta(Long innOfferor, Long lotId) {
+        AuthLotDTO offerorAuthLotDTO = utils.sendToGetRoleOfLot(innOfferor, lotId);
 
         //AGAR CUSTOMER BOLIB KELSA HAMMA MALUMOTLARNI QAYTARISH
         if (offerorAuthLotDTO.getRole().equals(RoleEnum.CUSTOMER.name().toLowerCase()))
             return getForCustomer(offerorAuthLotDTO, lotId, innOfferor);
 
+        return getForOfferor(innOfferor, lotId, offerorAuthLotDTO);
+    }
+
+    private ApiResult<StroyDTO> getForOfferor(Long innOfferor, Long lotId, AuthLotDTO offerorAuthLotDTO) {
         //SHU OFFERORGA TEGISHLI SHU LOTGA TEGISHLI TENDER MALUMOTLARINI TEKSHIRIB QAYTARISH
         Stroy stroy = stroyRepository.findFirstByLotIdAndDeletedIsFalse(lotId).orElseThrow(
                 () -> RestException.restThrow("Not found customer tender's details with  lot_id !", HttpStatus.NOT_FOUND));
@@ -557,7 +560,7 @@ public class TenderServiceImpl implements TenderService {
         List<SvodResursOfferor> allByStroyForOfferor = svodResourceOfferorRepository.findAllByStroy(stroy);
         List<SvodResursOfferor> svodResursOfferors = new ArrayList<>();
 
-        //agar oldin yaratilmagan bolsa cutomerdan olib offerorga yozib qaytarish
+        //agar oldin yaratilmagan bolsa customerdan olib offerorga yozib qaytarish
         if (allByStroyForOfferor == null || allByStroyForOfferor.isEmpty()){
             List<SvodResurs> svodResursForCustomer = svodResourceRepository.findAllByStroy(stroy);
 
@@ -639,57 +642,6 @@ public class TenderServiceImpl implements TenderService {
             list.add(saveTenderCustomerWithChild(smeta, authLotDTO, tenderInfoAddDTO));
 
         return list;
-    }
-
-    private AuthLotDTO sendToGetRoleOfLot(Long inn, Long lotId) {
-        URI uri = UriComponentsBuilder.fromUriString(apiUrlToRole).build().toUri();
-
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.setBasicAuth(username, password);
-
-        //LOT_ID AND INN SEND TO MUHAMMADALI'S SERVER WITH BASIC AUTH
-        logger.info("Send to get role and user_id from Muhammadali's server with inn: " + inn + " lod_id: " + lotId);
-        HttpEntity<CreateTenderDTO> requestEntity = new HttpEntity<>(new CreateTenderDTO(lotId, inn), headers);
-
-        JsonNode jsonNode;
-        try {
-            jsonNode = restTemplate.postForObject(uri, requestEntity, JsonNode.class);
-        } catch (HttpClientErrorException | HttpServerErrorException e) {
-            e.fillInStackTrace();
-            logger.error(e.getMessage() + "  inn: " + inn + ", lot_id: " + lotId);
-
-            String responseBody = e.getResponseBodyAsString();
-            ObjectMapper objectMapper = new ObjectMapper();
-            Error error;
-
-            try {
-                error = objectMapper.readValue(responseBody, Error.class);
-            } catch (JsonProcessingException ex) {
-                throw RestException.restThrow(responseBody);
-            }
-
-            throw RestException.restThrow(error.toString(), HttpStatus.resolve(error.getCode()));
-        }
-
-        AuthLotDTO authLotDTO = new AuthLotDTO();
-
-        if (Objects.nonNull(jsonNode)) {
-            String role = jsonNode.get("result").get("data").get("role").asText();
-            int status = jsonNode.get("result").get("data").get("lot_status").asInt();
-            boolean customerCanChange = jsonNode.get("result").get("data").get("customer_can_change").asBoolean();
-            boolean offerorCanChange = jsonNode.get("result").get("data").get("offeror_can_change").asBoolean();
-            long userId = jsonNode.get("result").get("data").get("user_id").asLong();
-
-            authLotDTO.setRole(role);
-            authLotDTO.setUserId(userId);
-            authLotDTO.setStatus(status);
-            authLotDTO.setOfferorCanChange(offerorCanChange);
-            authLotDTO.setCustomerCanChange(customerCanChange);
-            authLotDTO.setLotId(lotId);
-        }
-
-        return authLotDTO;
     }
 
     private TenderInfoDTO mapTenderToTenderDTO(TenderCustomer tenderCustomer) {

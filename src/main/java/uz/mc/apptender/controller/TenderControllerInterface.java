@@ -24,7 +24,7 @@ public interface TenderControllerInterface {
     ApiResult<?> createTender(@RequestBody @Valid CreateTenderDTO createTenderDTO);
 
     @GetMapping("/get")
-    ApiResult<?> getForOfferor(@RequestParam("inn") Long innOfferor,@RequestParam("lot_id") Long lotId );
+    ApiResult<?> getSmeta(@RequestParam("inn") Long inn,@RequestParam("lot_id") Long lotId );
 
     @GetMapping("/{lotId}")
     ResponseEntity<Resource> generateExcel(@PathVariable Long lotId);

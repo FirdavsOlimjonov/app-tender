@@ -30,8 +30,8 @@ public class TenderController implements TenderControllerInterface {
     }
 
     @Override
-    public ApiResult<?> getForOfferor(Long innOfferor, Long lotId) {
-        return tenderService.getForOfferor(innOfferor, lotId);
+    public ApiResult<?> getSmeta(Long innOfferor, Long lotId) {
+        return tenderService.getSmeta(innOfferor, lotId);
     }
 
     @Override

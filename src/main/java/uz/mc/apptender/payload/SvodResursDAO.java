@@ -29,7 +29,7 @@ public class SvodResursDAO {
     @JsonProperty("TIP")
     private Integer tip;
 
-    @NotBlank(message = MessageConstants.MUST_NOT_BE_BLANK_KODR)
+    @NotNull(message = MessageConstants.MUST_NOT_BE_BLANK_KODR)
     @JsonProperty("KODR")
     private String kodr;
 

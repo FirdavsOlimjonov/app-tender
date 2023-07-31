@@ -21,4 +21,6 @@ public interface TenderOfferorRepository extends JpaRepository<TenderOfferor,Lon
     boolean existsByLotIdAndUserId(long lotId, long userId);
 
     List<TenderOfferor> findAllByParentId(Long smId);
+
+    List<TenderOfferor> findAllByKodSnk(String kodr);
 }
