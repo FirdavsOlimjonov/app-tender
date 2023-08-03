@@ -1,14 +1,12 @@
 package uz.mc.apptender.modules;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 import org.hibernate.annotations.DynamicInsert;
 import org.hibernate.annotations.DynamicUpdate;
 import org.hibernate.annotations.Where;
 import uz.mc.apptender.modules.templates.AbsLongEntity;
 
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.ManyToOne;
 import java.math.BigDecimal;
@@ -21,6 +19,7 @@ import java.math.BigDecimal;
 @DynamicInsert
 @DynamicUpdate
 @Where(clause = "deleted = false")
+@ToString
 public class SvodResursOfferor extends AbsLongEntity {
     private Integer num;
 
@@ -44,4 +43,7 @@ public class SvodResursOfferor extends AbsLongEntity {
 
     @ManyToOne(optional = false)
     private Stroy stroy;
+
+    @Column(nullable = false)
+    private long userId;
 }

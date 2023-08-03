@@ -11,14 +11,29 @@ import java.util.List;
 @ToString
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class ApiResult<T> implements Serializable {
-    private Boolean success = false;
+    private boolean success;
     private String message;
+    private Long inn;
+    private Long lot_id;
     private T data;
     private List<ErrorData> errors;
+
+    public ApiResult(Boolean success, Long inn, Long lot_id, T data) {
+        this.success = success;
+        this.inn = inn;
+        this.lot_id = lot_id;
+        this.data = data;
+    }
 
     //RESPONSE WITH BOOLEAN (SUCCESS OR FAIL)
     private ApiResult(Boolean success) {
         this.success = success;
+    }
+
+    private ApiResult(Boolean success, Long inn, Long lot_id) {
+        this.success = success;
+        this.inn = inn;
+        this.lot_id = lot_id;
     }
 
     //SUCCESS RESPONSE WITH DATA
@@ -56,12 +71,20 @@ public class ApiResult<T> implements Serializable {
         return new ApiResult<>(data, true);
     }
 
+    public static <E> ApiResult<E> successResponse(E data, Long inn, Long lot_id) {
+        return new ApiResult<>(true, inn, lot_id, data);
+    }
+
     public static <E> ApiResult<E> successResponse(E data, String message) {
         return new ApiResult<>(data, true, message);
     }
 
     public static <E> ApiResult<E> successResponse() {
         return new ApiResult<>(true);
+    }
+
+    public static <E> ApiResult<E> successResponse(Long inn, Long lot_id) {
+        return new ApiResult<>(true, inn, lot_id);
     }
 
     public static ApiResult<String> successResponse(String message) {

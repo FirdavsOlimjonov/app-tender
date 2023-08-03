@@ -122,7 +122,7 @@ public class TenderServiceImpl implements TenderService {
 
             //AGAR TENDER ELONGA CHIQIB STATUS=2 BOLSA CUSTOMER UNI UPDATE QILA OLMAYDI
             if (!authLotDTO.isCustomerCanChange())
-                throw RestException.restThrow("customer cannot update tender details, tender is published!");
+                throw RestException.restThrow("Customer cannot update tender details, tender is published!");
 
             logger.info(String.format("Update stroy: lot_id = %s, userId = %s", stroyAddDTO.getLotId(), authLotDTO.getUserId()));
 
@@ -151,9 +151,8 @@ public class TenderServiceImpl implements TenderService {
         }
 
         List<SvodResurs> svodResurs = new ArrayList<>();
-        for (SvodResursDAO svdResource : stroyAddDTO.getSvodResurs()) {
+        for (SvodResursDAO svdResource : stroyAddDTO.getSvodResurs())
             svodResurs.add(mapSvodResource(svdResource, saveStroy));
-        }
 
         List<SvodResurs> svodResursList = svodResourceRepository.saveAll(svodResurs);
 
@@ -475,7 +474,7 @@ public class TenderServiceImpl implements TenderService {
                 continue;
             }
 
-            svodResursOfferors.add(mapSvodResourceOfferor(svodResurs, stroy));
+            svodResursOfferors.add(mapSvodResourceOfferor(svodResurs, stroy, authLotDTO.getUserId()));
         }
 
         List<SvodResursDAO> svodResursDAOList = mapSvodResourceDaoListForOfferor(svodResourceOfferorRepository.saveAll(svodResursOfferors));
@@ -550,22 +549,22 @@ public class TenderServiceImpl implements TenderService {
         }
 
         ///SvodResursni dbdan olib kelish
-        List<SvodResursDAO> svodResursDAOSForOfferor = getAllSvodResursForOfferor(stroy);
+        List<SvodResursDAO> svodResursDAOSForOfferor = getAllSvodResursForOfferor(stroy, offerorAuthLotDTO.getUserId());
 
         return ApiResult.successResponse(new StroyDTO(stroy.getId(), stroy.getStrName(), stroy.getTenderId(),
                 stroy.getLotId(), innOfferor, objectDTOList, svodResursDAOSForOfferor));
     }
 
-    private List<SvodResursDAO> getAllSvodResursForOfferor(Stroy stroy) {
-        List<SvodResursOfferor> allByStroyForOfferor = svodResourceOfferorRepository.findAllByStroy(stroy);
+    private List<SvodResursDAO> getAllSvodResursForOfferor(Stroy stroy, long userId) {
+        List<SvodResursOfferor> allByStroyForOfferor = svodResourceOfferorRepository.findAllByStroy_Id(stroy.getId());
         List<SvodResursOfferor> svodResursOfferors = new ArrayList<>();
 
         //agar oldin yaratilmagan bolsa customerdan olib offerorga yozib qaytarish
         if (allByStroyForOfferor == null || allByStroyForOfferor.isEmpty()){
-            List<SvodResurs> svodResursForCustomer = svodResourceRepository.findAllByStroy(stroy);
+            List<SvodResurs> svodResursForCustomer = svodResourceRepository.findAllByStroy(stroy.getId());
 
             for (SvodResurs resurs : svodResursForCustomer)
-                svodResursOfferors.add(mapSvodResourceOfferorFromCustomer(resurs,stroy));
+                svodResursOfferors.add(mapSvodResourceOfferorFromCustomer(resurs,stroy, userId));
 
             return mapSvodResourceDaoListForOfferor(svodResourceOfferorRepository.saveAll(svodResursOfferors));
         }
@@ -613,7 +612,7 @@ public class TenderServiceImpl implements TenderService {
     }
 
     private List<SvodResursDAO> getAllSvodResursForCustomer(Stroy stroy) {
-        return mapSvodResourceDaoList(svodResourceRepository.findAllByStroy(stroy));
+        return mapSvodResourceDaoList(svodResourceRepository.findAllByStroy(stroy.getId()));
     }
 
     private TenderOfferor mapTenderOfferorToTenderInfoAddDTO(TenderInfoAddDTO tenderInfoAddDTO, Smeta smeta, AuthLotDTO offerorAuthLotDTO, long lotId) {
@@ -792,7 +791,7 @@ public class TenderServiceImpl implements TenderService {
         );
     }
 
-    private SvodResursOfferor mapSvodResourceOfferor(SvodResursDAO svdResource, Stroy stroy) {
+    private SvodResursOfferor mapSvodResourceOfferor(SvodResursDAO svdResource, Stroy stroy, long userId) {
         return new SvodResursOfferor(
                 svdResource.getNum(),
                 svdResource.getKodv(),
@@ -804,7 +803,7 @@ public class TenderServiceImpl implements TenderService {
                 svdResource.getKol(),
                 svdResource.getPrice(),
                 svdResource.getSumma(),
-                stroy
+                stroy, userId
         );
     }
 
@@ -859,7 +858,7 @@ public class TenderServiceImpl implements TenderService {
                 )).toList();
     }
 
-    private SvodResursOfferor mapSvodResourceOfferorFromCustomer(SvodResurs svodResursForCustomer, Stroy stroy) {
+    private SvodResursOfferor mapSvodResourceOfferorFromCustomer(SvodResurs svodResursForCustomer, Stroy stroy, long userId) {
         return new SvodResursOfferor(
                 svodResursForCustomer.getNum(),
                 svodResursForCustomer.getKodv(),
@@ -871,7 +870,7 @@ public class TenderServiceImpl implements TenderService {
                 svodResursForCustomer.getKol(),
                 svodResursForCustomer.getPrice(),
                 svodResursForCustomer.getSumma(),
-                stroy
+                stroy, userId
         );
     }
 

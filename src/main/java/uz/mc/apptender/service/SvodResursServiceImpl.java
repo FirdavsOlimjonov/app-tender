@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import uz.mc.apptender.exeptions.RestException;
 import uz.mc.apptender.modules.Object;
 import uz.mc.apptender.modules.*;
@@ -40,23 +41,39 @@ public class SvodResursServiceImpl implements SvodResursService {
 
         log.info(String.format("Request send for get role and auth: role = %s, userId = %s", authLotDTO.getRole(), authLotDTO.getUserId()));
 
+        Stroy stroy = stroyRepository.findFirstByLotId(lot_id).orElseThrow(
+                () -> RestException.restThrow("This lot not found!", HttpStatus.NOT_FOUND));
+
+        log.info(String.format("Stroy name: %s, inn: %d,  lot_id = %d", stroy.getStrName(), inn, lot_id));
+
         List<SvodResursDAO> res;
 
-        if (Objects.equals(role, RoleEnum.OFFEROR))
-            res = svodResourceRepository.findAllByStroy_LotId(lot_id)
+        //agar offeror bolsa price = 0 boladi
+        if (Objects.equals(role, RoleEnum.OFFEROR)) res = getSvodResursDAOS(stroy, authLotDTO);
+        else res = svodResourceRepository.findAllByStroy(stroy.getId())
+                .stream()
+                .map(this::mapSvodResursDao)
+                .toList();
+
+        return ApiResult.successResponse(res, inn, lot_id);
+    }
+
+    private List<SvodResursDAO> getSvodResursDAOS(Stroy stroy, AuthLotDTO authLotDTO) {
+        //agar oldin yaratilgan bolsa id bilan qaytarish aks holda id bermaslik
+        if (svodResourceOfferorRepository.existsByUserIdAndStroy_Id(authLotDTO.getUserId(), stroy.getId()))
+            return svodResourceOfferorRepository.findAllByStroy_Id(stroy.getId())
                     .stream()
                     .map(this::mapSvodResursDaoWithoutPrices)
                     .toList();
-        else
-            res = svodResourceRepository.findAllByStroy_LotId(lot_id)
-                    .stream()
-                    .map(this::mapSvodResursDao)
-                    .toList();
 
-        return ApiResult.successResponse(res);
+        return svodResourceRepository.findAllByStroy(stroy.getId())
+                .stream()
+                .map(this::mapSvodResursDaoWithoutPrices)
+                .toList();
     }
 
     @Override
+    @Transactional
     public ApiResult<?> update(SvodResursUpdate svodResursUpdate) {
         Long inn = svodResursUpdate.getInn();
         Long lotId = svodResursUpdate.getLot_id();
@@ -83,7 +100,9 @@ public class SvodResursServiceImpl implements SvodResursService {
         if (!tenderOfferorRepository.existsByLotIdAndUserId(lotId, authLotDTO.getUserId()))
             createSmetaOfferor(lotId, authLotDTO);
 
-        return updateSmetaOfferor(svodResursUpdate, stroy);
+        updateSmetaOfferor(svodResursUpdate, stroy, authLotDTO);
+
+        return ApiResult.successResponse(inn, lotId);
     }
 
     private void createSmetaOfferor(long lotId, AuthLotDTO authLotDTO) {
@@ -105,7 +124,7 @@ public class SvodResursServiceImpl implements SvodResursService {
                         TenderOfferor tenderOfferorSaved = tenderOfferorRepository.save(tenderOfferor);
 
                         List<TenderCustomer> tenderCustomerListChild
-                                = tenderCustomerRepository.findAllBySmeta_IdAndParentId(smeta.getId(), tenderCustomer.getSmId());
+                                = tenderCustomerRepository.findAllByParentId(tenderCustomer.getSmId());
 
                         for (TenderCustomer child : tenderCustomerListChild)
                             tenderOfferorListForSave.add(getTenderOfferorWithParent(lotId, authLotDTO, smeta, child, tenderOfferorSaved));
@@ -123,21 +142,21 @@ public class SvodResursServiceImpl implements SvodResursService {
     }
 
 
-    private ApiResult<?> updateSmetaOfferor(SvodResursUpdate svodResursUpdate, Stroy stroy) {
+    private void updateSmetaOfferor(SvodResursUpdate svodResursUpdate, Stroy stroy, AuthLotDTO authLotDTO) {
         List<SvodResursDAO> svodResursList = svodResursUpdate.getSvod_resurs();
-        List<SvodResursOfferor> svodResursOfferors = new ArrayList<>();
         List<TenderOfferor> tenderOfferorList = new ArrayList<>();
 
+        List<SvodResursOfferor> svodResursOfferors = new ArrayList<>();
+
         for (SvodResursDAO svodResursDAO : svodResursList) {
-            svodResursOfferors.add(mapSvodResursOfferor(svodResursDAO, stroy));
+            //agar oldinyaratilgan bolsa oshani qoshib qaytaradi aks holsa yangi yaratib qaytaradi
+            mapSvodResursOfferor(svodResursDAO, stroy, svodResursOfferors, authLotDTO.getUserId());
 
             //kodr boyicha kodSnk dan olib kelib update qilish uchun
-            updateTenderOfferor(svodResursDAO , tenderOfferorList);
+            updateTenderOfferor(svodResursDAO, tenderOfferorList);
         }
 
         svodResourceOfferorRepository.saveAll(svodResursOfferors);
-
-        return ApiResult.successResponse();
     }
 
     private void updateTenderOfferor(SvodResursDAO svodResursDAO, List<TenderOfferor> tenderOfferorList) {
@@ -157,6 +176,25 @@ public class SvodResursServiceImpl implements SvodResursService {
             }
         }
     }
+
+    private void mapSvodResursOfferor(SvodResursDAO svodResurs, Stroy stroy, List<SvodResursOfferor> svodResursOfferors, long userId) {
+        SvodResursOfferor svodResursOfferor;
+        if (svodResurs.getId() != null) {
+            svodResursOfferor = svodResourceOfferorRepository.findById(svodResurs.getId())
+                    .orElseThrow(() -> RestException.restThrow("SvodResurs' id is not correct!"));
+
+            svodResursOfferor.setSumma(svodResurs.getSumma());
+            svodResursOfferor.setPrice(svodResurs.getPrice());
+            svodResursOfferor.setKol(svodResurs.getKol());
+
+            svodResursOfferors.add(svodResursOfferor);
+        }
+        else {
+            svodResursOfferor = getSvodResursOfferor(svodResurs, stroy, userId);
+            svodResursOfferors.add(svodResursOfferor);
+        }
+    }
+
 
     private static TenderOfferor getTenderOfferor(long lotId, AuthLotDTO authLotDTO, Smeta smeta, TenderCustomer tenderCustomer) {
         return TenderOfferor.builder()
@@ -197,6 +235,22 @@ public class SvodResursServiceImpl implements SvodResursService {
 
     private SvodResursDAO mapSvodResursDaoWithoutPrices(SvodResurs svodResurs) {
         return new SvodResursDAO(
+                null,
+                svodResurs.getNum(),
+                svodResurs.getKodv(),
+                svodResurs.getTip(),
+                svodResurs.getKodr(),
+                svodResurs.getKodm(),
+                svodResurs.getKodiName(),
+                svodResurs.getName(),
+                svodResurs.getKol(),
+                new BigDecimal(0),
+                new BigDecimal(0)
+        );
+    }
+
+    private SvodResursDAO mapSvodResursDaoWithoutPrices(SvodResursOfferor svodResurs) {
+        return new SvodResursDAO(
                 svodResurs.getId(),
                 svodResurs.getNum(),
                 svodResurs.getKodv(),
@@ -227,7 +281,7 @@ public class SvodResursServiceImpl implements SvodResursService {
         );
     }
 
-    private SvodResursOfferor mapSvodResursOfferor(SvodResursDAO svodResurs, Stroy stroy) {
+    private static SvodResursOfferor getSvodResursOfferor(SvodResursDAO svodResurs, Stroy stroy, long userId) {
         return new SvodResursOfferor(
                 svodResurs.getNum(),
                 svodResurs.getKodv(),
@@ -239,7 +293,7 @@ public class SvodResursServiceImpl implements SvodResursService {
                 svodResurs.getKol(),
                 svodResurs.getPrice(),
                 svodResurs.getSumma(),
-                stroy
+                stroy, userId
         );
     }
 }

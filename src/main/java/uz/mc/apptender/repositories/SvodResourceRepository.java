@@ -9,7 +9,8 @@ import java.util.List;
 
 public interface SvodResourceRepository extends JpaRepository<SvodResurs, Long> {
 
-    List<SvodResurs> findAllByStroy(Stroy stroy);
+    @Query(nativeQuery = true, value = "select * from svod_resurs where stroy_id = :stroy_id ;")
+    List<SvodResurs> findAllByStroy(Integer stroy_id);
 
     @Query(nativeQuery = true, value = """
             select * from svod_resurs sv where stroy_id = (select id from stroy where lot_id = :lotId) and tip = :tip order by num;

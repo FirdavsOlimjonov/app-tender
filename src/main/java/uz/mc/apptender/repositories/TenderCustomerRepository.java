@@ -17,7 +17,6 @@ public interface TenderCustomerRepository extends JpaRepository<TenderCustomer,L
     Optional<TenderCustomer> findBySmIdAndSmeta_Id(Long smId, Long smeta_id);
 
     Optional<TenderCustomer> findBySmIdAndParentId(Long smId, Long parentId);
-    List<TenderCustomer> findAllBySmeta_IdAndParentId(Long smeta_id, Long parent_id);
 
     List<TenderCustomer> findAllBySmeta_IdAndUserId(Long smeta_id, Long userId);
 
