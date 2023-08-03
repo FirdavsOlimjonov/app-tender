@@ -17,11 +17,11 @@ import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 import uz.mc.apptender.exeptions.RestException;
-import uz.mc.apptender.payload.AuthLotDTO;
-import uz.mc.apptender.payload.CreateTenderDTO;
+import uz.mc.apptender.payload.*;
 import uz.mc.apptender.payload.Error;
 
 import java.net.URI;
+import java.util.List;
 import java.util.Objects;
 
 @Component
@@ -57,15 +57,19 @@ public class Utils {
 
             String responseBody = e.getResponseBodyAsString();
             ObjectMapper objectMapper = new ObjectMapper();
-            Error error;
+            AuthErrorDTO error;
 
             try {
-                error = objectMapper.readValue(responseBody, Error.class);
+                error = objectMapper.readValue(responseBody, AuthErrorDTO.class);
             } catch (JsonProcessingException ex) {
                 throw RestException.restThrow(responseBody);
             }
 
-            throw RestException.restThrow(error.toString(), HttpStatus.resolve(error.getCode()));
+            List<ErrorData> errorData = error.getError().stream()
+                    .map(errorDTO -> new ErrorData(error.getCode(), errorDTO.getFieldErrors()))
+                    .toList();
+
+            throw RestException.restThrow(errorData, HttpStatus.resolve(error.getCode()));
         }
 
         AuthLotDTO authLotDTO = new AuthLotDTO();

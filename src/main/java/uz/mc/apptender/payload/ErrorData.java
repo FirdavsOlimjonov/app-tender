@@ -5,6 +5,9 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
+import java.util.Map;
+
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
@@ -19,8 +22,21 @@ public class ErrorData {
     //QAYSI FIELD XATO EKANLIGI
     private String fieldName;
 
+    private Map<String, List<String>> fieldErrors;
+
+    public ErrorData(int errorCode, Map<String, List<String>> fieldErrors) {
+        this.errorCode = errorCode;
+        this.fieldErrors = fieldErrors;
+    }
+
     public ErrorData(String errorMsg, Integer errorCode) {
         this.errorMsg = errorMsg;
         this.errorCode = errorCode;
+    }
+
+    public ErrorData(String errorMessage, int value, String field) {
+        this.errorMsg = errorMessage;
+        this.errorCode = value;
+        this.fieldName = field;
     }
 }
