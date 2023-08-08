@@ -42,6 +42,9 @@ public class Smeta extends AbsTimestampEntity {
     @ManyToOne(optional = false)
     private Object object;
 
+    @ManyToOne(optional = false)
+    private Stroy stroy;
+
     private boolean deleted = false;
 
     @OneToMany(mappedBy = "smeta", fetch = FetchType.LAZY)
@@ -50,10 +53,11 @@ public class Smeta extends AbsTimestampEntity {
     @OneToMany(mappedBy = "smeta", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private List<TenderOfferor> smeta_offeror;
 
-    public Smeta(String smName, String smNum, long userId, Object object) {
+    public Smeta(String smName, String smNum, long userId, Object object, Stroy stroy) {
         this.smName = smName;
         this.smNum = smNum;
         this.userId = userId;
         this.object = object;
+        this.stroy = stroy;
     }
 }

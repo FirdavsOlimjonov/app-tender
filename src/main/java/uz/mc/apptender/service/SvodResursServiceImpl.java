@@ -89,7 +89,7 @@ public class SvodResursServiceImpl implements SvodResursService {
 
         //AGAR TENDER ELONGA CHIQMAGAN BO'LSA UNi YARATA OLMAYDI(UNGA O'ZGARTIRISH KIRITA OLMAYDI) OFFEROR
         if (!authLotDTO.isOfferorCanChange())
-            throw RestException.restThrow("Offerror cannot add or change price and summa. Because tender has already published!");
+            throw RestException.restThrow("Offerror cannot add or change price and summa. check tender status!");
 
         Stroy stroy = stroyRepository.findFirstByLotId(lotId).orElseThrow(
                 () -> RestException.restThrow("This lot not found!", HttpStatus.NOT_FOUND));
@@ -293,7 +293,7 @@ public class SvodResursServiceImpl implements SvodResursService {
                 svodResurs.getKol(),
                 svodResurs.getPrice(),
                 svodResurs.getSumma(),
-                stroy, userId
+                stroy, userId, false
         );
     }
 }

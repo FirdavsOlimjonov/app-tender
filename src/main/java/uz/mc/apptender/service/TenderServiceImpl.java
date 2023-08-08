@@ -104,47 +104,42 @@ public class TenderServiceImpl implements TenderService {
 
         logger.info(String.format("Request send for get role and auth: role = %s, userId = %s", authLotDTO.getRole(), authLotDTO.getUserId()));
 
-        //AGAR OFFEROR BOLSA UNI FAQAT PRICE VA SUMMA SAQLANADI
-        if (Objects.equals(role, RoleEnum.OFFEROR)) {
+        //AGAR OFFEROR BOLSA ERROR QAYTARAMIZ
+        if (Objects.equals(role, RoleEnum.OFFEROR))
             throw RestException.restThrow("Offeror cannot add smeta!");
-//            //AGAR TENDER ELONGA CHIQMAGAN BO'LSA UNGA O'ZGARTIRISH KIRITA OLMAYDI OFFEROR
-//            if (!authLotDTO.isOfferorCanChange())
-//                throw RestException.restThrow("Offerror cannot added price and summa after published tender!");
-//            return ApiResult.successResponse(saveTenderForOfferor(stroyAddDTO, authLotDTO));
-        }
+
+        //AGAR TENDER ELONGA CHIQIB STATUS=2 BOLSA CUSTOMER UNI UPDATE QILA OLMAYDI
+        if (!authLotDTO.isCustomerCanChange())
+            throw RestException.restThrow("Customer cannot create or update tender details, Check tender status!");
 
         Stroy stroy = stroyRepository.findFirstByLotIdAndDeletedIsFalse(stroyAddDTO.getLotId()).orElse(new Stroy());
 
-        //AGAR UPDATE QILISH KERAK BOLSA SHU QISMGA TUSHADI
+        //AGAR UPDATE QILMOQCHI BOLSA OLDIN  OFERROR VA OZINI TOZALAYMIZ KEYIN QAYTATDAN CREATE QILADI PASTGA TUSHIB
         if (Objects.nonNull((stroy.getId()))) {
-            if (Objects.isNull(stroyAddDTO.getId()))
-                throw RestException.restThrow("Smeta already created with this lot_id! You should give unique id for update this smeta details!");
 
-            //AGAR TENDER ELONGA CHIQIB STATUS=2 BOLSA CUSTOMER UNI UPDATE QILA OLMAYDI
-            if (!authLotDTO.isCustomerCanChange())
-                throw RestException.restThrow("Customer cannot update tender details, tender is published!");
+            logger.info(String.format("Update deleted is true: lot_id = %s, userId = %s", stroyAddDTO.getLotId(), authLotDTO.getUserId()));
 
-            logger.info(String.format("Update stroy: lot_id = %s, userId = %s", stroyAddDTO.getLotId(), authLotDTO.getUserId()));
-
-            return updateTenderFromCustomer(authLotDTO, stroy, stroyAddDTO);
+            //hamma tabledagi eski datalarni deleted = true qilish
+            stroyRepository.updateAllTableToDeletedIsTrue(stroy.getId(), stroyAddDTO.getLotId());
         }
 
-        logger.info(String.format("Create stroy: lot_id = %s, userId = %s", stroyAddDTO.getLotId(), authLotDTO.getUserId()));
+        if (stroy.getTenderId()!= null)
+            tenderId = stroy.getTenderId();
 
-        Stroy saveStroy = stroyRepository.save(new Stroy(stroyAddDTO.getStrName(), tenderId, stroyAddDTO.getLotId()));
+        stroy = stroyRepository.save(new Stroy(stroyAddDTO.getStrName(),tenderId, stroyAddDTO.getLotId()));
 
         List<ObjectDTO> objectDTOList = new ArrayList<>();
 
         for (ObjectAddDTO objectAddDTO : stroyAddDTO.getObArray()) {
-            Object saveObj = objectRepository.save(new Object(objectAddDTO.getObName(), objectAddDTO.getObNum(), authLotDTO.getUserId(), saveStroy));
+            Object saveObj = objectRepository.save(new Object(objectAddDTO.getObName(), objectAddDTO.getObNum(), authLotDTO.getUserId(), stroy));
             List<SmetaDTO> smetaDTOList = new ArrayList<>();
             List<TenderInfoDTO> tenderInfoDTOList;
 
             for (SmetaAddDTO smetaAddDTO : objectAddDTO.getSmArray()) {
-                Smeta saveSmt = smetaRepository.save(new Smeta(smetaAddDTO.getSmName(), smetaAddDTO.getSmNum(), authLotDTO.getUserId(), saveObj));
+                Smeta saveSmt = smetaRepository.save(new Smeta(smetaAddDTO.getSmName(), smetaAddDTO.getSmNum(), authLotDTO.getUserId(), saveObj, stroy));
 
                 tenderInfoDTOList = saveTender(saveSmt, smetaAddDTO.getSmeta(), authLotDTO);
-                SmetaItog smetaItog = smetaItogRepository.save(mapSmetaItogToSmetaItogAddDTO(smetaAddDTO.getSmetaItog(), saveSmt));
+                SmetaItog smetaItog = smetaItogRepository.save(mapSmetaItogToSmetaItogAddDTO(smetaAddDTO.getSmetaItog(), saveSmt, stroy));
                 smetaDTOList.add(mapSmetaToSmetaDTO(saveSmt, tenderInfoDTOList, mapSmetaItogToSmetaItogDTO(smetaItog)));
             }
             objectDTOList.add(mapObjectToObjectDTO(saveObj, smetaDTOList));
@@ -152,186 +147,12 @@ public class TenderServiceImpl implements TenderService {
 
         List<SvodResurs> svodResurs = new ArrayList<>();
         for (SvodResursDAO svdResource : stroyAddDTO.getSvodResurs())
-            svodResurs.add(mapSvodResource(svdResource, saveStroy));
+            svodResurs.add(mapSvodResource(svdResource, stroy));
 
         List<SvodResurs> svodResursList = svodResourceRepository.saveAll(svodResurs);
 
-        return ApiResult.successResponse(new StroyDTO(saveStroy.getId(), saveStroy.getStrName(), saveStroy.getTenderId(),
+        return ApiResult.successResponse(new StroyDTO(stroy.getId(), stroy.getStrName(), stroy.getTenderId(),
                 stroyAddDTO.getLotId(), stroyAddDTO.getInn(), objectDTOList, mapSvodResourceDaoList(svodResursList)));
-    }
-
-    private ApiResult<StroyDTO> updateTenderFromCustomer(AuthLotDTO authLotDTO, Stroy stroy, StroyAddDTO stroyAddDTO) {
-        Stroy save;
-        if (!Objects.equals(stroy.getStrName(), stroyAddDTO.getStrName())) {
-            stroy.setStrName(stroyAddDTO.getStrName());
-            save = stroyRepository.save(stroy);
-        } else save = stroy;
-
-        List<ObjectDTO> objectDTOList = new ArrayList<>();
-
-        for (ObjectAddDTO objectAddDTO : stroyAddDTO.getObArray()) {
-            Object saveObj;
-            List<SmetaDTO> smetaDTOList = new ArrayList<>();
-
-            if (Objects.isNull(objectAddDTO.getId()))
-                saveObj = objectRepository.save(new Object(objectAddDTO.getObName(), objectAddDTO.getObNum(), authLotDTO.getUserId(), save));
-            else {
-                Object object = objectRepository.findFirstByIdAndStroy_Id(objectAddDTO.getId(), save.getId()).orElseThrow(
-                        () -> RestException.restThrow("Object not found! Maybe Object not related to Stroy! obj_id:" + objectAddDTO.getId(), HttpStatus.NOT_FOUND));
-
-                object.setObName(objectAddDTO.getObName());
-                object.setObNum(objectAddDTO.getObNum());
-
-                saveObj = objectRepository.save(object);
-            }
-
-            for (SmetaAddDTO smetaAddDTO : objectAddDTO.getSmArray()) {
-                Smeta saveSmt;
-                SmetaItog smetaItog;
-
-                if (Objects.isNull(smetaAddDTO.getId())) {
-                    saveSmt = smetaRepository.save(new Smeta(smetaAddDTO.getSmName(), smetaAddDTO.getSmNum(), authLotDTO.getUserId(), saveObj));
-                    smetaItog = smetaItogRepository.save(mapSmetaItogToSmetaItogAddDTO(smetaAddDTO.getSmetaItog(), saveSmt));
-                } else {
-                    Smeta smeta = smetaRepository.findFirstByIdAndObject_Id(smetaAddDTO.getId(), saveObj.getId()).orElseThrow(
-                            () -> RestException.restThrow("Smeta not found! Maybe Smeta not related to Object! smeta_id: " + smetaAddDTO.getId(), HttpStatus.NOT_FOUND));
-
-                    smeta.setSmName(smetaAddDTO.getSmName());
-                    smeta.setSmNum(smetaAddDTO.getSmNum());
-
-                    saveSmt = smetaRepository.save(smeta);
-
-                    SmetaItog smetaItogFind = smetaItogRepository.findBySmeta_Id(saveSmt.getId()).orElseThrow(
-                            () -> RestException.restThrow("SmetaItog not found! Maybe SmetaItog not related to this Smeta! smeta_id: " + smetaAddDTO.getId(), HttpStatus.NOT_FOUND));
-
-                    SmetaItogAddDTO smetaItogAddDTO = smetaAddDTO.getSmetaItog();
-
-                    smetaItogFind.setZatrTrud(smetaItogAddDTO.getZatrTrud());
-                    smetaItogFind.setSummaZp(smetaItogAddDTO.getSummaZp());
-                    smetaItogFind.setSummaExp(smetaItogAddDTO.getSummaExp());
-                    smetaItogFind.setSummaMat(smetaItogAddDTO.getSummaMat());
-                    smetaItogFind.setSummaObo(smetaItogAddDTO.getSummaObo());
-                    smetaItogFind.setItogPr(smetaItogAddDTO.getItogPr());
-                    smetaItogFind.setSummaPph(smetaItogAddDTO.getSummaPph());
-                    smetaItogFind.setSummaPzp(smetaItogAddDTO.getSummaPzp());
-                    smetaItogFind.setSummaSso(smetaItogAddDTO.getSummaSso());
-                    smetaItogFind.setSummaKr(smetaItogAddDTO.getSummaKr());
-                    smetaItogFind.setSummaNds(smetaItogAddDTO.getSummaNds());
-                    smetaItogFind.setItogAll(smetaItogAddDTO.getItogAll());
-
-                    smetaItog = smetaItogRepository.save(smetaItogFind);
-                }
-
-                List<TenderInfoDTO> tenderInfoDTOS = updateTenderInfoAddDTOList(smetaAddDTO.getSmeta(), saveSmt, authLotDTO);
-                smetaDTOList.add(mapSmetaToSmetaDTO(saveSmt, tenderInfoDTOS, mapSmetaItogToSmetaItogDTO(smetaItog)));
-
-            }
-            objectDTOList.add(mapObjectToObjectDTO(saveObj, smetaDTOList));
-        }
-
-        ///SVOD_RESURS UNI UPDATE QILISH UCHUN
-        List<SvodResursDAO> svodResursDAOS = updateSvodResurs(stroyAddDTO.getSvodResurs(), save);
-
-        return ApiResult.successResponse(new StroyDTO(save.getId(), save.getStrName(), save.getTenderId(),
-                stroyAddDTO.getLotId(), stroyAddDTO.getInn(), objectDTOList, svodResursDAOS));
-    }
-
-    private List<SvodResursDAO> updateSvodResurs(List<SvodResursDAO> svodResurs, Stroy stroy) {
-
-        List<SvodResurs> svodResursList = new ArrayList<>();
-        for (SvodResursDAO svodResur : svodResurs) {
-
-            if (Objects.isNull(svodResur.getId()))
-                svodResursList.add(mapSvodResource(svodResur, stroy));
-            else {
-                SvodResurs resurs = svodResourceRepository.findById(svodResur.getId()).orElseThrow(
-                        () -> RestException.restThrow("Svod Resurs not found!", HttpStatus.NOT_FOUND));
-
-                resurs.setName(svodResur.getName());
-                resurs.setNum(svodResur.getNum());
-                resurs.setKodv(svodResur.getKodv());
-                resurs.setKodr(svodResur.getKodr());
-                resurs.setKodm(svodResur.getKodm());
-                resurs.setKol(svodResur.getKol());
-                resurs.setPrice(svodResur.getPrice());
-                resurs.setStroy(stroy);
-                resurs.setSumma(svodResur.getSumma());
-                resurs.setKodiName(svodResur.getKodiName());
-
-                svodResursList.add(resurs);
-            }
-
-        }
-
-        return mapSvodResourceDaoList(svodResourceRepository.saveAll(svodResursList));
-
-    }
-
-    private List<TenderInfoDTO> updateTenderInfoAddDTOList(List<TenderInfoAddDTO> smetaList, Smeta saveSmt, AuthLotDTO authLotDTO) {
-        List<TenderInfoDTO> result = new ArrayList<>();
-
-        for (TenderInfoAddDTO tenderInfoAddDTO : smetaList) {
-            if (Objects.isNull(tenderInfoAddDTO.getSmId()))
-                result.add(saveTenderCustomerWithChild(saveSmt, authLotDTO, tenderInfoAddDTO));
-            else {
-                TenderCustomer customer = tenderCustomerRepository.findBySmIdAndSmeta_Id(tenderInfoAddDTO.getSmId(), saveSmt.getId()).orElseThrow(
-                        () -> RestException.restThrow("Tender more details not found! Maybe TenderCustomer not related to Smeta! id: " + tenderInfoAddDTO.getSmId(), HttpStatus.NOT_FOUND));
-
-                customer.setEdIsm(tenderInfoAddDTO.getEd_ism());
-                customer.setNum(tenderInfoAddDTO.getNum());
-                customer.setRowType(tenderInfoAddDTO.getRowType());
-                customer.setRashod(tenderInfoAddDTO.getRashod());
-                customer.setNorma(tenderInfoAddDTO.getNorma());
-                customer.setSumma(tenderInfoAddDTO.getSumma());
-                customer.setKodSnk(tenderInfoAddDTO.getKod_snk());
-                customer.setPrice(tenderInfoAddDTO.getPrice());
-                customer.setName(tenderInfoAddDTO.getName());
-
-                List<TenderInfoDTO> resArr = null;
-
-                if (tenderInfoAddDTO.getRowType() == 0) {
-                    List<TenderInfoAddDTO> resArray = tenderInfoAddDTO.getResArray();
-                    if (Objects.isNull(resArray))
-                        continue;
-
-                    List<TenderInfoDTO> res = new ArrayList<>();
-
-                    for (TenderInfoAddDTO child : resArray) {
-                        if (Objects.isNull(child.getSmId())) {
-                            TenderCustomer tenderCustomerChild = tenderCustomerRepository.save(
-                                    mapTenderAddDTOToTenderForChild(child, null, authLotDTO, customer));
-                            res.add(mapTenderToTenderDTO(tenderCustomerChild));
-                        } else {
-                            TenderCustomer childCustomer = tenderCustomerRepository.findBySmIdAndParentId(child.getSmId(), customer.getSmId()).orElseThrow(
-                                    () -> RestException.restThrow(String.format("Tender more details not found with parent! Maybe TenderCustomer not related to Smeta Or Parent! parent_id: %s, sm_id: %s",
-                                            customer.getSmId(), child.getSmId()), HttpStatus.NOT_FOUND));
-
-                            childCustomer.setEdIsm(tenderInfoAddDTO.getEd_ism());
-                            childCustomer.setNum(tenderInfoAddDTO.getNum());
-                            childCustomer.setRowType(tenderInfoAddDTO.getRowType());
-                            childCustomer.setRashod(tenderInfoAddDTO.getRashod());
-                            childCustomer.setNorma(tenderInfoAddDTO.getNorma());
-                            childCustomer.setSumma(tenderInfoAddDTO.getSumma());
-                            childCustomer.setKodSnk(tenderInfoAddDTO.getKod_snk());
-                            childCustomer.setPrice(tenderInfoAddDTO.getPrice());
-                            childCustomer.setName(tenderInfoAddDTO.getName());
-
-                            TenderCustomer childTenderCustomer = tenderCustomerRepository.save(childCustomer);
-                            res.add(mapTenderToTenderDTO(childTenderCustomer));
-                        }
-                    }
-                    resArr = res;
-                }
-
-                TenderCustomer tenderCustomer = tenderCustomerRepository.save(customer);
-                TenderInfoDTO tenderInfoDTO = mapTenderToTenderDTO(tenderCustomer);
-                tenderInfoDTO.setResArray(resArr);
-
-                result.add(tenderInfoDTO);
-            }
-        }
-
-        return result;
     }
 
     private TenderInfoDTO saveTenderCustomerWithChild(Smeta saveSmt, AuthLotDTO authLotDTO, TenderInfoAddDTO tenderInfoAddDTO) {
@@ -348,7 +169,7 @@ public class TenderServiceImpl implements TenderService {
 
 
             for (TenderInfoAddDTO child : resArray) {
-                TenderCustomer tenderCustomerChild = tenderCustomerRepository.save(mapTenderAddDTOToTenderForChild(child, null, authLotDTO, tenderCustomer));
+                TenderCustomer tenderCustomerChild = tenderCustomerRepository.save(mapTenderAddDTOToTenderForChild(child, authLotDTO, tenderCustomer));
                 resArrList.add(mapTenderToTenderDTO(tenderCustomerChild));
             }
 
@@ -435,11 +256,11 @@ public class TenderServiceImpl implements TenderService {
         List<SvodResursOfferor> svodResursOfferors = new ArrayList<>();
 
         //agar oldin yaratilmagan bolsa customerdan olib offerorga yozib qaytarish
-        if (allByStroyForOfferor == null || allByStroyForOfferor.isEmpty()){
+        if (allByStroyForOfferor == null || allByStroyForOfferor.isEmpty()) {
             List<SvodResurs> svodResursForCustomer = svodResourceRepository.findAllByStroy(stroy.getId());
 
             for (SvodResurs resurs : svodResursForCustomer)
-                svodResursOfferors.add(mapSvodResourceOfferorFromCustomer(resurs,stroy, userId));
+                svodResursOfferors.add(mapSvodResourceOfferorFromCustomer(resurs, stroy, userId));
 
             return mapSvodResourceDaoListForOfferor(svodResourceOfferorRepository.saveAll(svodResursOfferors));
         }
@@ -488,24 +309,6 @@ public class TenderServiceImpl implements TenderService {
 
     private List<SvodResursDAO> getAllSvodResursForCustomer(Stroy stroy) {
         return mapSvodResourceDaoList(svodResourceRepository.findAllByStroy(stroy.getId()));
-    }
-
-    private TenderOfferor mapTenderOfferorToTenderInfoAddDTO(TenderInfoAddDTO tenderInfoAddDTO, Smeta smeta, AuthLotDTO offerorAuthLotDTO, long lotId) {
-        return TenderOfferor.builder()
-                .norma(tenderInfoAddDTO.getNorma())
-                .price(tenderInfoAddDTO.getPrice())
-                .name(tenderInfoAddDTO.getName())
-                .kodSnk(tenderInfoAddDTO.getKod_snk())
-                .rashod(tenderInfoAddDTO.getRashod())
-                .summa(tenderInfoAddDTO.getSumma())
-                .rowType(tenderInfoAddDTO.getRowType())
-                .edIsm(tenderInfoAddDTO.getEd_ism())
-                .num(tenderInfoAddDTO.getNum())
-                .smeta(smeta)
-                .lotId(lotId)
-                .opred(tenderInfoAddDTO.getOpred())
-                .userId(offerorAuthLotDTO.getUserId())
-                .build();
     }
 
     private List<TenderInfoDTO> saveTender(Smeta smeta, List<TenderInfoAddDTO> smetaDtoList, AuthLotDTO authLotDTO) {
@@ -587,7 +390,7 @@ public class TenderServiceImpl implements TenderService {
                 .build();
     }
 
-    private TenderCustomer mapTenderAddDTOToTenderForChild(TenderInfoAddDTO tenderInfo, Smeta smeta, AuthLotDTO authLotDTO, TenderCustomer tenderCustomer) {
+    private TenderCustomer mapTenderAddDTOToTenderForChild(TenderInfoAddDTO tenderInfo, AuthLotDTO authLotDTO, TenderCustomer tenderCustomer) {
         return TenderCustomer.builder()
                 .num(tenderInfo.getNum())
                 .edIsm(tenderInfo.getEd_ism())
@@ -599,7 +402,7 @@ public class TenderServiceImpl implements TenderService {
                 .norma(tenderInfo.getNorma())
                 .rashod(tenderInfo.getRashod())
                 .summa(tenderInfo.getSumma())
-                .smeta(smeta)
+                .smeta(null)
                 .lotId(authLotDTO.getLotId())
                 .parentId(tenderCustomer.getSmId())
                 .userId(authLotDTO.getUserId())
@@ -632,7 +435,7 @@ public class TenderServiceImpl implements TenderService {
                 .build();
     }
 
-    private SmetaItog mapSmetaItogToSmetaItogAddDTO(SmetaItogAddDTO smetaItog, Smeta saveSmt) {
+    private SmetaItog mapSmetaItogToSmetaItogAddDTO(SmetaItogAddDTO smetaItog, Smeta saveSmt, Stroy stroy) {
         return SmetaItog.builder()
                 .itogPr(smetaItog.getItogPr())
                 .itogAll(smetaItog.getItogAll())
@@ -647,6 +450,7 @@ public class TenderServiceImpl implements TenderService {
                 .summaKr(smetaItog.getSummaKr())
                 .summaNds(smetaItog.getSummaNds())
                 .smeta(saveSmt)
+                .stroy(stroy)
                 .build();
     }
 
@@ -662,23 +466,7 @@ public class TenderServiceImpl implements TenderService {
                 svdResource.getKol(),
                 svdResource.getPrice(),
                 svdResource.getSumma(),
-                stroy
-        );
-    }
-
-    private SvodResursOfferor mapSvodResourceOfferor(SvodResursDAO svdResource, Stroy stroy, long userId) {
-        return new SvodResursOfferor(
-                svdResource.getNum(),
-                svdResource.getKodv(),
-                svdResource.getTip(),
-                svdResource.getKodr(),
-                svdResource.getKodm(),
-                svdResource.getKodiName(),
-                svdResource.getName(),
-                svdResource.getKol(),
-                svdResource.getPrice(),
-                svdResource.getSumma(),
-                stroy, userId
+                stroy, false
         );
     }
 
@@ -745,7 +533,7 @@ public class TenderServiceImpl implements TenderService {
                 svodResursForCustomer.getKol(),
                 svodResursForCustomer.getPrice(),
                 svodResursForCustomer.getSumma(),
-                stroy, userId
+                stroy, userId, false
         );
     }
 

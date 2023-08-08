@@ -13,25 +13,27 @@ public interface StroyRepository extends JpaRepository<Stroy,Integer> {
     @Query(value = "select max(tender_id) from stroy", nativeQuery = true)
     Integer findMaxTenderId();
 
-
     Optional<Stroy> findFirstByLotId(long lotId);
 
     Optional<Stroy> findFirstByLotIdAndDeletedIsFalse(long lotId);
 
     @Modifying
-    @Query(value =
-                    "UPDATE tender_customer SET deleted = true WHERE user_id = :userId and deleted = false and smeta_id in " +
-                            "(select id from smeta where user_id = :userId and deleted = false and object_id in (select id from object where user_id = :userId and stroy_id = :stroyId and deleted = false));\n" +
-                    "UPDATE smeta SET deleted = true WHERE user_id = :userId and deleted = false and object_id in  (select id from object where user_id = :userId and stroy_id = :stroyId and deleted = false);\n" +
-                    "UPDATE object SET deleted = true WHERE user_id = :userId and stroy_id = :stroyId and deleted = false;", nativeQuery = true)
-    void deleteAllByUser(@Param("userId")long userId, @Param("stroyId")Integer stroyId);
-
-    @Modifying
-    @Query(value =
-            "UPDATE tender_offeror SET deleted = true WHERE  user_id = :userId and deleted = false and smeta_id in " +
-                    "(select id from smeta where role = :role and user_id = :userId and deleted = false and object_id in (select id from object where and user_id = :userId and stroy_id = :stroyId and deleted = false));\n" +
-                    "UPDATE smeta SET deleted = true WHERE user_id = :userId and deleted = false and object_id in  (select id from object where user_id = :userId and stroy_id = :stroyId and deleted = false);\n" +
-                    "UPDATE object SET deleted = true WHERE user_id = :userId and stroy_id = :stroyId and deleted = false;", nativeQuery = true)
-    void deleteAllByUserOfferor(@Param("userId")long userId, @Param("stroyId")Integer stroyId);
-
+    @Query(nativeQuery = true, value = """
+                update tender_offeror set deleted = true where lot_id = :lot_id and deleted is false;
+                
+                update tender_customer set deleted = true where lot_id = :lot_id and deleted is false;
+                
+                update svod_resurs_offeror set deleted = true where stroy_id = :stroy_id and deleted is false;
+                
+                update svod_resurs set deleted = true where stroy_id = :stroy_id and deleted is false;
+                
+                update smeta_itog set deleted = true where stroy_id = :stroy_id and deleted is false;
+                
+                update smeta set deleted = true where stroy_id = :stroy_id and deleted is false;
+                
+                update object set deleted = true where stroy_id = :stroy_id and deleted is false;
+                
+                update stroy set deleted = true where id = :stroy_id and deleted is false;
+            """)
+    void updateAllTableToDeletedIsTrue(Integer stroy_id, Long lot_id);
 }

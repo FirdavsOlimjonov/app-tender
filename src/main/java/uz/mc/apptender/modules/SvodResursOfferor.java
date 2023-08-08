@@ -46,4 +46,6 @@ public class SvodResursOfferor extends AbsLongEntity {
 
     @Column(nullable = false)
     private long userId;
+
+    private boolean deleted = false;
 }

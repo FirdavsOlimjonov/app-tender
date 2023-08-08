@@ -51,5 +51,6 @@ public class Object extends AbsTimestampEntity {
         this.obNum = obNum;
         this.userId = userId;
         this.stroy = stroy;
+        deleted = false;
     }
 }

@@ -42,4 +42,6 @@ public class SvodResurs extends AbsLongEntity {
 
     @ManyToOne(optional = false)
     private Stroy stroy;
+
+    private boolean deleted = false;
 }

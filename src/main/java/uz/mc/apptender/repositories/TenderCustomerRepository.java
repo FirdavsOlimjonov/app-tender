@@ -12,31 +12,15 @@ import java.util.Optional;
 
 public interface TenderCustomerRepository extends JpaRepository<TenderCustomer,Long> {
 
-    Optional<TenderCustomer> findBySmId(Long smId);
-
-    Optional<TenderCustomer> findBySmIdAndSmeta_Id(Long smId, Long smeta_id);
-
-    Optional<TenderCustomer> findBySmIdAndParentId(Long smId, Long parentId);
-
     List<TenderCustomer> findAllBySmeta_IdAndUserId(Long smeta_id, Long userId);
 
     List<TenderCustomer> findAllBySmeta_Id(Long smeta_id);
-
-    List<TenderCustomer> findAllBySmeta_IdAndParentIdIsNull(Long smeta_id);
-
-    @Query(nativeQuery = true, value = """
-            SELECT DISTINCT ON (kod_snk) kod_snk, sm_id as id, name, ed_ism, norma, price, summa
-            FROM tender_customer\s
-                where parent_id is null and smeta_id = :smeta_id\s
-            ORDER BY kod_snk,sm_id;
-            """)
-    List<TenderProjection> findAllBySmeta_IdOOrderByKodSnkOrSmId(Long smeta_id);
 
     List<TenderCustomer> findAllByParentId(Long parentId);
 
     @Query(nativeQuery = true, value = """
             select coalesce(sum(rashod), 0) from tender_customer
-            where lot_id = :lot_id and kod_snk = :kodr ;
+            where lot_id = :lot_id and kod_snk = :kodr and deleted is false;
             """)
     double sumRashod(Long lot_id, String kodr);
 }

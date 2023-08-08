@@ -62,6 +62,9 @@ public class SmetaItog extends AbsTimestampEntity{
     @OneToOne(optional = false)
     private Smeta smeta;
 
+    @ManyToOne(optional = false)
+    private Stroy stroy;
+
     private boolean deleted = false;
 
 }

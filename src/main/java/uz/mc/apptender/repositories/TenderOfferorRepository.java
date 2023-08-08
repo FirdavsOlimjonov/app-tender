@@ -10,13 +10,7 @@ import java.util.Optional;
 
 public interface TenderOfferorRepository extends JpaRepository<TenderOfferor,Long> {
 
-    Optional<TenderOfferor> findBySmIdAndUserIdAndSmeta_Id(Long smId, long userId, Long smeta_id);
-
-    boolean existsByLotId(long lotId);
-
     List<TenderOfferor> findAllBySmeta_idAndUserId(Long smeta_id, long userId);
-
-    Optional<TenderOfferor> findBySmIdAndUserId(Long smId, long userId);
 
     boolean existsByLotIdAndUserId(long lotId, long userId);
 

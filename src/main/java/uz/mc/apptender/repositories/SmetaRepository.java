@@ -11,13 +11,6 @@ import java.util.List;
 import java.util.Optional;
 
 public interface SmetaRepository extends JpaRepository<Smeta, Long> {
-
-    Optional<Smeta> findFirstByIdAndObject_Id(Long id, Integer object_id);
-
-//    @Query(value = """
-//            select s.id, s.sm_num, s.sm_name, s.user_id from smeta s where s.object_id = :id
-//            """, nativeQuery = true)
     List<Smeta> findAllByObject_Id(Integer id);
 
-    Smeta findFirstById(Long id);
 }

@@ -30,10 +30,11 @@ public class Stroy extends AbsTimestampEntity {
     @Column(nullable = false)
     private Integer tenderId;
 
-    @Column(nullable = false, unique = true)
+    @Column(nullable = false)
     private long lotId;
 
     private boolean deleted = false;
+
     @OneToMany(mappedBy = "stroy",fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     @ToString.Exclude
     private List<Object> obArray;
