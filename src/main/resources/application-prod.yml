@@ -31,9 +31,6 @@ app:
 
   basic-auth:
     username: tender
-    password: customer_password
+    password: mlc7o$5@bR
 
-  basic-auth-offeror:
-    username: tender
-    password: offeror_password
 
