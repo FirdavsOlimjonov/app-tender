@@ -11,7 +11,7 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: create
+      ddl-auto: update
     show-sql: true
     properties:
       hibernate:
@@ -20,10 +20,6 @@ spring:
   mvc:
     pathmatch:
       matching-strategy: ant_path_matcher
-
-logging:
-  file:
-    name: tenders.log
 
 app:
   rest-template:
@@ -36,4 +32,7 @@ app:
     username: tender
     password: mlc7o$5@bR
 
+logging:
+  file:
+    name: tenders.log
 
