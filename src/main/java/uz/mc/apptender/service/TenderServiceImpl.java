@@ -25,6 +25,7 @@ import uz.mc.apptender.payload.*;
 import uz.mc.apptender.repositories.*;
 import uz.mc.apptender.utils.Utils;
 
+import java.math.BigDecimal;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
@@ -73,17 +74,7 @@ public class TenderServiceImpl implements TenderService {
             e.fillInStackTrace();
             logger.error(e.getMessage() + "  inn: " + createTenderDTO.getInn() + ", lot_id: " + createTenderDTO.getLotId());
 
-            String responseBody = e.getResponseBodyAsString();
-            ObjectMapper objectMapper = new ObjectMapper();
-            Error error;
-
-            try {
-                error = objectMapper.readValue(responseBody, Error.class);
-            } catch (JsonProcessingException ex) {
-                throw RestException.restThrow(responseBody);
-            }
-
-            throw RestException.restThrow(error.toString(), HttpStatus.resolve(error.getCode()));
+            throw RestException.restThrow(e.getMessage(), e.getStatusCode());
         }
 
         // EXTRACT ROLE AND CODE FROM THE RESPONSE DTO OBJECT
@@ -123,10 +114,11 @@ public class TenderServiceImpl implements TenderService {
             stroyRepository.updateAllTableToDeletedIsTrue(stroy.getId(), stroyAddDTO.getLotId());
         }
 
-        if (stroy.getTenderId()!= null)
+        if (stroy.getTenderId() != null)
             tenderId = stroy.getTenderId();
 
-        stroy = stroyRepository.save(new Stroy(stroyAddDTO.getStrName(),tenderId, stroyAddDTO.getLotId()));
+        stroy = stroyRepository.save(new Stroy(stroyAddDTO.getStrName(), tenderId, stroyAddDTO.getLotId()));
+        double sumAll = 0.0;
 
         List<ObjectDTO> objectDTOList = new ArrayList<>();
 
@@ -146,8 +138,14 @@ public class TenderServiceImpl implements TenderService {
         }
 
         List<SvodResurs> svodResurs = new ArrayList<>();
-        for (SvodResursDAO svdResource : stroyAddDTO.getSvodResurs())
+        for (SvodResursDAO svdResource : stroyAddDTO.getSvodResurs()) {
             svodResurs.add(mapSvodResource(svdResource, stroy));
+            sumAll+=svdResource.getSumma();
+        }
+
+        //obshiy summani hisoblab kelib stroyga qoshib qoyish
+        stroy.setSum(BigDecimal.valueOf(sumAll));
+        stroyRepository.save(stroy);
 
         List<SvodResurs> svodResursList = svodResourceRepository.saveAll(svodResurs);
 
@@ -166,7 +164,6 @@ public class TenderServiceImpl implements TenderService {
                 return null;
 
             List<TenderInfoDTO> resArrList = new ArrayList<>();
-
 
             for (TenderInfoAddDTO child : resArray) {
                 TenderCustomer tenderCustomerChild = tenderCustomerRepository.save(mapTenderAddDTOToTenderForChild(child, authLotDTO, tenderCustomer));
@@ -465,7 +462,7 @@ public class TenderServiceImpl implements TenderService {
                 svdResource.getName(),
                 svdResource.getKol(),
                 svdResource.getPrice(),
-                svdResource.getSumma(),
+                BigDecimal.valueOf(svdResource.getSumma()),
                 stroy, false
         );
     }
@@ -483,7 +480,7 @@ public class TenderServiceImpl implements TenderService {
                         svodResurs.getName(),
                         svodResurs.getKol(),
                         svodResurs.getPrice(),
-                        svodResurs.getSumma()
+                        svodResurs.getSumma().doubleValue()
                 )).toList();
     }
 
@@ -500,7 +497,7 @@ public class TenderServiceImpl implements TenderService {
                         svodResurs.getName(),
                         svodResurs.getKol(),
                         svodResurs.getPrice(),
-                        svodResurs.getSumma()
+                        svodResurs.getSumma().doubleValue()
                 )).toList();
     }
 

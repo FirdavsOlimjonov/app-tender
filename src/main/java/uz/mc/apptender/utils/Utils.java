@@ -55,21 +55,7 @@ public class Utils {
             e.fillInStackTrace();
             log.error(e.getMessage() + "  inn: " + inn + ", lot_id: " + lotId);
 
-            String responseBody = e.getResponseBodyAsString();
-            ObjectMapper objectMapper = new ObjectMapper();
-            AuthErrorDTO error;
-
-            try {
-                error = objectMapper.readValue(responseBody, AuthErrorDTO.class);
-            } catch (JsonProcessingException ex) {
-                throw RestException.restThrow(responseBody);
-            }
-
-            List<ErrorData> errorData = error.getError().stream()
-                    .map(errorDTO -> new ErrorData(error.getCode(), errorDTO.getFieldErrors()))
-                    .toList();
-
-            throw RestException.restThrow(errorData, HttpStatus.resolve(error.getCode()));
+            throw RestException.restThrow(e.getMessage(), e.getStatusCode());
         }
 
         AuthLotDTO authLotDTO = new AuthLotDTO();

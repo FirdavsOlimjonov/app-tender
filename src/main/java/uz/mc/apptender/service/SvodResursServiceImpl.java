@@ -147,6 +147,10 @@ public class SvodResursServiceImpl implements SvodResursService {
         List<TenderOfferor> tenderOfferorList = new ArrayList<>();
 
         List<SvodResursOfferor> svodResursOfferors = new ArrayList<>();
+        double sumMaxStroy = stroy.getSum().doubleValue();
+        double sumMinStroy = (sumMaxStroy * 95.0) / 100;
+
+        double summAll = 0.0;
 
         for (SvodResursDAO svodResursDAO : svodResursList) {
             //agar oldinyaratilgan bolsa oshani qoshib qaytaradi aks holsa yangi yaratib qaytaradi
@@ -154,7 +158,12 @@ public class SvodResursServiceImpl implements SvodResursService {
 
             //kodr boyicha kodSnk dan olib kelib update qilish uchun
             updateTenderOfferor(svodResursDAO, tenderOfferorList);
+
+            summAll += svodResursDAO.getSumma();
         }
+
+        if (sumMinStroy > summAll || sumMaxStroy < summAll)
+            throw RestException.restThrow("Overall summ is not valid. It is not more than customer overall sum and not less than customer overall sum");
 
         svodResourceOfferorRepository.saveAll(svodResursOfferors);
     }
@@ -183,13 +192,12 @@ public class SvodResursServiceImpl implements SvodResursService {
             svodResursOfferor = svodResourceOfferorRepository.findById(svodResurs.getId())
                     .orElseThrow(() -> RestException.restThrow("SvodResurs' id is not correct!"));
 
-            svodResursOfferor.setSumma(svodResurs.getSumma());
+            svodResursOfferor.setSumma(BigDecimal.valueOf(svodResurs.getSumma()));
             svodResursOfferor.setPrice(svodResurs.getPrice());
             svodResursOfferor.setKol(svodResurs.getKol());
 
             svodResursOfferors.add(svodResursOfferor);
-        }
-        else {
+        } else {
             svodResursOfferor = getSvodResursOfferor(svodResurs, stroy, userId);
             svodResursOfferors.add(svodResursOfferor);
         }
@@ -245,7 +253,7 @@ public class SvodResursServiceImpl implements SvodResursService {
                 svodResurs.getName(),
                 svodResurs.getKol(),
                 new BigDecimal(0),
-                new BigDecimal(0)
+                0.0
         );
     }
 
@@ -261,7 +269,7 @@ public class SvodResursServiceImpl implements SvodResursService {
                 svodResurs.getName(),
                 svodResurs.getKol(),
                 new BigDecimal(0),
-                new BigDecimal(0)
+                0.0
         );
     }
 
@@ -277,7 +285,7 @@ public class SvodResursServiceImpl implements SvodResursService {
                 svodResurs.getName(),
                 svodResurs.getKol(),
                 svodResurs.getPrice(),
-                svodResurs.getSumma()
+                svodResurs.getSumma().doubleValue()
         );
     }
 
@@ -292,7 +300,7 @@ public class SvodResursServiceImpl implements SvodResursService {
                 svodResurs.getName(),
                 svodResurs.getKol(),
                 svodResurs.getPrice(),
-                svodResurs.getSumma(),
+                BigDecimal.valueOf(svodResurs.getSumma()),
                 stroy, userId, false
         );
     }

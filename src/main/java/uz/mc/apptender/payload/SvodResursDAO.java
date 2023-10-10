@@ -57,5 +57,5 @@ public class SvodResursDAO {
 
     @NotNull(message = MessageConstants.MUST_NOT_BE_NULL_SUMMA)
     @JsonProperty("SUMMA")
-    private BigDecimal summa;
+    private Double summa;
 }

@@ -8,6 +8,7 @@ import uz.mc.apptender.modules.enums.RoleEnum;
 import uz.mc.apptender.modules.templates.AbsTimestampEntity;
 
 import javax.persistence.*;
+import java.math.BigDecimal;
 import java.util.List;
 
 @Entity
@@ -32,6 +33,9 @@ public class Stroy extends AbsTimestampEntity {
 
     @Column(nullable = false)
     private long lotId;
+
+    @Column(precision=20, scale=5)
+    private BigDecimal sum;
 
     private boolean deleted = false;
 
